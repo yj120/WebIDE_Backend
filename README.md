@@ -23,30 +23,30 @@
 
 ### 커밋 메세지
 - 커밋 메세지 형식은 다음과 같습니다.
-|type(타입) : title(제목)
-|
-|body(본문, 생략 가능)
-|
-|Resolves : #issueNo, ...(해결한 이슈 , 생략 가능)
-|
-|See also : #issueNo, ...(참고 이슈, 생략 가능)
+> type(타입) : title(제목)
+> 
+> body(본문, 생략 가능)
+> 
+> Resolves : #issueNo, ...(해결한 이슈 , 생략 가능)
+> 
+> See also : #issueNo, ...(참고 이슈, 생략 가능)
 
 여기서 타입은 다음과 같습니다.
 
-Type	사용 시점
-feat	새로운 기능 추가
-fix	버그 수정
-docs	문서 수정
-style	코드 스타일 변경 (코드 포매팅, 세미콜론 누락 등)
-design	사용자 UI 디자인 변경 (CSS 등)
-test	테스트 코드, 리팩토링 테스트 코드 추가
-refactor	코드 리팩토링
-build	빌드 파일 수정
-ci	CI 설정 파일 수정
-perf	성능 개선
-chore	빌드 업무 수정, 패키지 매니저 수정 (gitignore 수정 등)
-rename	파일 혹은 폴더명을 수정만 한 경우
-remove	파일을 삭제만 한 경우
+> Type	사용 시점
+> feat	새로운 기능 추가
+> fix	버그 수정
+> docs	문서 수정
+> style	코드 스타일 변경 (코드 포매팅, 세미콜론 누락 등)
+> design	사용자 UI 디자인 변경 (CSS 등)
+> test	테스트 코드, 리팩토링 테스트 코드 추가
+> refactor	코드 리팩토링
+> build	빌드 파일 수정
+> ci	CI 설정 파일 수정
+> perf	성능 개선
+> chore	빌드 업무 수정, 패키지 매니저 수정 (gitignore 수정 등)
+> rename	파일 혹은 폴더명을 수정만 한 경우
+> remove	파일을 삭제만 한 경우
 
 ### 브랜치
 - 해당 프로젝트는 Github Flow 전략을 사용합니다.
