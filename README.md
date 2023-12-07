@@ -12,6 +12,7 @@
 - **FrameWork**: Spring Boot 3.x
 - **DataBase**: Mysql version미정
 - **ORM**: JPA
+- 원활한 개발을 위해 IntelliJ를 사용할 경우 AWS toolkit, Spring Websocket 등 플러그인을 설치 바랍니다.
 
 ### 담당 기능
 - **이건**: 소스코드 파이프라인 및 소스코드 실행 요청 처리
