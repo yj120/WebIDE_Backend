@@ -8,6 +8,10 @@ services:
     image: goojeans/mainserver:latest
     ports:
       - "8080:8080"
+    environment:
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
   runserver:
     build:
       context: ./runserver
