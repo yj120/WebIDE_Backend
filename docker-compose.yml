@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  mainserver:
+    build:
+      context: ./idemainserver
+      dockerfile: Dockerfile
+    image: goojeans/mainserver:latest
+    ports:
+      - "8080:8080"
+  runserver:
+    build:
+      context: ./runserver
+      dockerfile: Dockerfile
+    image: goojeans/runserver:latest
+    ports:
+      - "9090:8080"
