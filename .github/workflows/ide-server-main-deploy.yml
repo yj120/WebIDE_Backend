@@ -1,4 +1,4 @@
-name: Deploy to AWS Elastic Beanstalk
+name: Deploy docker image to AWS
 
 on:
   push:
@@ -6,22 +6,44 @@ on:
       - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate deployment package
-        run: zip -r deploy.zip . -x "*.git*"
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy to AWS Elastic Beanstalk
-        uses: einaregilsson/beanstalk-deploy@v21
+      - name: Login to Amazon ECR
+        run: |
+            aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+      - name: Build and push Docker images
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+            docker-compose build
+            docker-compose push
+
+      - name: Generate Dockerrun.aws.json
+        run: |
+          echo '{"AWSEBDockerrunVersion": "2", "containerDefinitions": [{"name": "web", "image": "${{ secrets.AWS_ECR_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/goojeans-webide:latest", "essential": true, "memory": 512, "portMappings": [{"hostPort": 80, "containerPort": 80}]}]}' > Dockerrun.aws.json
+
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v18
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: ${{ secrets.EB_APPLICATION_NAME }}
-          environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
-          version_label: "version-${{ github.run_number }}"
+          application_name: ${{ secrets.EB_APPLICATION }}
+          environment_name: ${{ secrets.EB_ENVIRONMENT }}
+          version_label: ${{ github.sha }}
           region: ${{ secrets.AWS_REGION }}
-          deployment_package: deploy.zip
+          deployment_package: Dockerrun.aws.json
