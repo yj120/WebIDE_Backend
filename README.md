@@ -10,7 +10,7 @@
 ### ⚙️ 개발 환경
 - `Java 17`
 - **FrameWork**: Spring Boot 3.x
-- **DataBase**: Mysql version미정
+- **DataBase**: Mysql 8.0.33
 - **ORM**: JPA
 - 원활한 개발을 위해 IntelliJ를 사용할 경우 AWS toolkit, Spring Websocket 등 플러그인을 설치 바랍니다.
 
