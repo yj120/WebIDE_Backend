@@ -11,7 +11,7 @@ jobs:
 
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql:8
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: testdb
@@ -43,7 +43,7 @@ jobs:
           DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          TEST_DB_URL: jdbc:mysql://localhost:3306/testdb
+          TEST_DB_URL: jdbc:mysql://localhost:3306/testdb?serverTimezone=UTC&characterEncoding=UTF-8
           TEST_DB_USERNAME: root
           TEST_DB_PASSWORD: password
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
