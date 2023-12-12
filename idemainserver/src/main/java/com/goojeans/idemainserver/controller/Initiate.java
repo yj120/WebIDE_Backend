@@ -14,7 +14,7 @@ public class Initiate {
     public TestResponseDto hello() {
         RestTemplate restTemplate = new RestTemplate();
 
-        TestResponseDto responseDto = restTemplate.getForObject("http://run:8080/python", TestResponseDto.class);
+        TestResponseDto responseDto = restTemplate.getForObject("http://run:9090/python", TestResponseDto.class);
         log.info("response={}", responseDto);
         return responseDto;
     }
