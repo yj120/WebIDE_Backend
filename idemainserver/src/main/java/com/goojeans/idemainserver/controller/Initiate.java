@@ -11,10 +11,15 @@ import org.springframework.web.client.RestTemplate;
 public class Initiate {
 
     @GetMapping("/")
+    public String helloWorld() {
+        return "hello world!";
+    }
+
+    @GetMapping("/python")
     public TestResponseDto hello() {
         RestTemplate restTemplate = new RestTemplate();
 
-        TestResponseDto responseDto = restTemplate.getForObject("http://run:8080/python", TestResponseDto.class);
+        TestResponseDto responseDto = restTemplate.getForObject("http://runserver:8080/python", TestResponseDto.class);
         log.info("response={}", responseDto);
         return responseDto;
     }
