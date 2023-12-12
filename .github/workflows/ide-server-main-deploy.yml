@@ -53,7 +53,7 @@ jobs:
 
       - name: Generate Dockerrun.aws.json
         run: |
-          echo '{"AWSEBDockerrunVersion": "2", "containerDefinitions": [{"name": "main", "image": "${{ secrets.AWS_ECR_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.AWS_ECR_NAME }}:${{ secrets.AWS_ECR_TAG1 }}", "essential": true, "memory": 512, "portMappings": [{"hostPort": 5000, "containerPort": 8080}]}, {"name": "run", "image": "${{ secrets.AWS_ECR_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.AWS_ECR_NAME }}:${{ secrets.AWS_ECR_TAG2 }}", "essential": true, "memory": 512, "portMappings": [{"hostPort": 9090, "containerPort": 8080}]}]}' > Dockerrun.aws.json
+          echo '{"AWSEBDockerrunVersion": "2", "containerDefinitions": [{"name": "main", "image": "${{ secrets.AWS_ECR_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.AWS_ECR_NAME }}:${{ secrets.AWS_ECR_TAG1 }}", "essential": true, "memory": 512, "portMappings": [{"hostPort": 8080, "containerPort": 8080}]}, {"name": "run", "image": "${{ secrets.AWS_ECR_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.AWS_ECR_NAME }}:${{ secrets.AWS_ECR_TAG2 }}", "essential": true, "memory": 512, "portMappings": [{"hostPort": 9090, "containerPort": 8080}]}]}' > Dockerrun.aws.json
 
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
