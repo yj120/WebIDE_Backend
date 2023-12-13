@@ -1,6 +1,14 @@
 version: "3.8"
 
 services:
+  mysql:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: testdb
+
   mainserver:
     build:
       context: ./idemainserver
@@ -12,6 +20,7 @@ services:
       DB_URL: ${DB_URL}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
+
   runserver:
     build:
       context: ./runserver
