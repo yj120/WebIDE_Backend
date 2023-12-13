@@ -31,11 +31,8 @@ jobs:
           TAG1: ${{ secrets.AWS_ECR_TAG1 }}
           TAG2: ${{ secrets.AWS_ECR_TAG2 }}
         run: |
-          docker-compose up -d mysql
           docker-compose build
-          docker push ${REGISTRY}/${REPOSITORY}:${TAG1}
-          docker push ${REGISTRY}/${REPOSITORY}:${TAG2}
-          docker-compose down
+          docker-compose push
 
       - name: Generate Dockerrun.aws.json
         run: |
