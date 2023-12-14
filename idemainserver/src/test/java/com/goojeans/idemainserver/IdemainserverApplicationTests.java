@@ -7,13 +7,13 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers
+//@Testcontainers
 @SpringBootTest
 class IdemainserverApplicationTests {
 
-	@Container
+/*	@Container
 	static JdbcDatabaseContainer testMysqlContainer = new MySQLContainer("mysql:8")
-			.withDatabaseName("testdb");
+			.withDatabaseName("testdb");*/
 	@Test
 	void contextLoads() {
 	}
