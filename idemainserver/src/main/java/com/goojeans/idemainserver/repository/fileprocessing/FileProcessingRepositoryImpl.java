@@ -116,14 +116,14 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
 
     @Override
     public RunCode saveMetaData(RunCode runCode) {
-        RunCode findCode = em.find(RunCode.class, runCode);
+        RunCode findCode = em.find(RunCode.class, runCode.getSourceUrl());
         if (findCode == null) {
             em.persist(runCode);
             return runCode;
         }
-        findCode.setRunResult(runCode.getRunResult());
-        findCode.setSourceUrl(runCode.getSourceUrl());
-        findCode.setSolvedStatus(runCode.getSolvedStatus());
+        findCode.builder()
+                .runResult(runCode.getRunResult())
+                .sourceUrl(runCode.getSourceUrl());
 
         return findCode;
     }

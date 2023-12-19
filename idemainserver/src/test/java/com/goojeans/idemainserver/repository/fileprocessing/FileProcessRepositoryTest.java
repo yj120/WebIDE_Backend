@@ -10,13 +10,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Commit;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -161,8 +158,8 @@ class FileProcessRepositoryTest {
     @Test
     void modifyFilePath() {
         //Given
-        String beforePath = "algorithmId/user/userId/before/test.py";
-        String afterPath = "algorithmId/user/userId/modifyPath/test.py";
+        String beforePath = "algorithmId/userId/before/test.py";
+        String afterPath = "algorithmId/userId/modifyPath/test.py";
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(beforePath)
@@ -200,10 +197,9 @@ class FileProcessRepositoryTest {
     @Test
     void saveMetaData() {
         //Given
-        String filePath = "algorithmId/user/userId/test.py";
+        String filePath = "algorithmId/userId/test.py";
         String runResult = "12\n27";
-        SolvedStatus solvedStatus = SolvedStatus.Correct;
-        RunCode runCode = new RunCode(filePath, solvedStatus, runResult);
+        RunCode runCode = new RunCode(filePath, runResult);
 
         //When
         RunCode saveRunCode = repository.saveMetaData(runCode);
@@ -218,9 +214,9 @@ class FileProcessRepositoryTest {
     @Test
     void getMetaData() {
         //Given
-        String filePath = "algorithmId/user/userId/get.py";
+        String filePath = "algorithmId/userId/get.py";
         String runResult = "12\n27";
-        RunCode runCode = new RunCode(filePath, null, runResult);
+        RunCode runCode = new RunCode(filePath, runResult);
         em.persist(runCode);
 
         //When
