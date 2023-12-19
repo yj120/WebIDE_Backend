@@ -4,8 +4,12 @@
 
 .gradle/
 
+.env
+
 !gradle/wrapper/gradle-wrapper.jar
 
 *.log
 
 *.properties
+
+*.yml
