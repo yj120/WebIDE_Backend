@@ -20,8 +20,8 @@ public class SourceCodeFileSet {
 	// private String filePath;
 	// private String executableFilePath;
 
-	public static SourceCodeFileSet of(File sourceCode, File outputFile, File errorFile) {
-		return new SourceCodeFileSet(sourceCode, outputFile, errorFile);
+	public static SourceCodeFileSet of(AllFilesSet allFilesSet) {
+		return new SourceCodeFileSet(allFilesSet.getSourceCodeFile(), allFilesSet.getErrorFile(), allFilesSet.getOutputFile());
 	}
 
 }

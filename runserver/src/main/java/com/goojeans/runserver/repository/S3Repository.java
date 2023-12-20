@@ -12,12 +12,10 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
-import com.goojeans.runserver.dto.file.SourceCodeFileSet;
-import com.goojeans.runserver.dto.file.ExecuteFileSet;
+import com.goojeans.runserver.dto.file.AllFilesSet;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -28,7 +26,6 @@ import software.amazon.awssdk.services.s3.model.InvalidObjectStateException;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @Slf4j
@@ -41,24 +38,26 @@ public class S3Repository {
 	@Value("${cloud.aws.s3.bucket}")
 	private String bucket;
 
-	public SourceCodeFileSet downloadCompileFilesFromS3(long algorithmId, String uuid, String s3Key){
+	public AllFilesSet downloadAllFilesFromS3(String fileExtension, long algorithmId, String uuid, String s3Key) {
 
-		// compileFile 다운로드
-		 File compileFile = downloadFileFromS3(uuid, s3Key);
+		// sourceCodeFile 다운로드
+		File sourceCodeFile = downloadFileFromS3(uuid, s3Key);
 
-		// 출력 값 저장할 파일 생성
-		File outputFile = new File(uuid + "_output.txt");
+		// excuteFile 다운로드
+		File excuteFile;
+		if (fileExtension.equals("cpp")) {
+			 excuteFile = new File(uuid + ".o");
+		} else if (fileExtension.equals("java")) {
+			 excuteFile = new File(uuid + ".java");
+		} else {
+			 excuteFile = new File(uuid + ".py");
+		}
 
 		// error 저장할 파일 생성
 		File errorFile = new File(uuid + "_error.txt");
 
-		 return SourceCodeFileSet.of(compileFile, errorFile, outputFile);
-	}
-
-	public ExecuteFileSet downloadFilesFromS3(long algorithmId, String uuid, String s3Key) {
-
-		// S3에서 user의 sourcecode 파일 가져오기
-		File sourceCodeFile = downloadFileFromS3(uuid, s3Key);
+		// 출력 값 저장할 파일 생성
+		File outputFile = new File(uuid + "_output.txt");
 
 		// S3에서 해당 문제의 testcase 파일 List 가져오기
 		List<File> testcases = getFileListFromS3(uuid, algorithmId, "testcases");
@@ -66,42 +65,95 @@ public class S3Repository {
 		// S3에서 해당 문제의 answer 파일 List 가져오기
 		List<File> answers = getFileListFromS3(uuid, algorithmId, "answers");
 
-		// 출력 값 저장할 파일 생성
-		File outputFile = new File(uuid + "_output.txt");
-
-		// error 저장할 파일 생성
-		File errorFile = new File(uuid + "_error.txt");
-
-		// TODO admin에서 저장할 때 testcase랑 answer랑 개수 똑같은지 다시 한번 확인하고, 여기서도 확인? 아니면 NullPointEx 터짐.
-
-		// 순서 맞추기 위해 testcases, answers sort
 		Collections.sort(testcases);
 		Collections.sort(answers);
 
-		return ExecuteFileSet.of(sourceCodeFile, testcases, answers, outputFile, errorFile);
+		log.info("sourceCodeFile : {}", sourceCodeFile);
+		log.info("excuteFile : {}", excuteFile);
+		log.info("errorFile : {}", errorFile);
+		log.info("outputFile : {}", outputFile);
 
+		return AllFilesSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testcases, answers);
 	}
 
-	public boolean deleteAllFiles(ExecuteFileSet executeFileSet) {
+	// public SourceCodeFileSet downloadCompileFilesFromS3(long algorithmId, String uuid, String s3Key){
+	//
+	// 	// compileFile 다운로드
+	// 	 File compileFile = downloadFileFromS3(uuid, s3Key);
+	//
+	// 	// 출력 값 저장할 파일 생성
+	// 	File outputFile = new File(uuid + "_output.txt");
+	//
+	// 	// error 저장할 파일 생성
+	// 	File errorFile = new File(uuid + "_error.txt");
+	//
+	// 	 return SourceCodeFileSet.of();
+	// }
 
-		// TODO 삭제되지 않으면 바로 처리?
-		boolean isDeletedSourceCode = executeFileSet.getExcuteFile().delete();
+	// public ExecuteFileSet downloadFilesFromS3(long algorithmId, String uuid, String s3Key) {
+	//
+	// 	// S3에서 user의 sourcecode 파일 가져오기
+	// 	File sourceCodeFile = downloadFileFromS3(uuid, s3Key);
+	//
+	// 	// S3에서 해당 문제의 testcase 파일 List 가져오기
+	// 	List<File> testcases = getFileListFromS3(uuid, algorithmId, "testcases");
+	//
+	// 	// S3에서 해당 문제의 answer 파일 List 가져오기
+	// 	List<File> answers = getFileListFromS3(uuid, algorithmId, "answers");
+	//
+	// 	// 출력 값 저장할 파일 생성
+	// 	File outputFile = new File(uuid + "_output.txt");
+	//
+	// 	// error 저장할 파일 생성
+	// 	File errorFile = new File(uuid + "_error.txt");
+	//
+	// 	// TODO admin에서 저장할 때 testcase랑 answer랑 개수 똑같은지 다시 한번 확인하고, 여기서도 확인? 아니면 NullPointEx 터짐.
+	//
+	// 	// 순서 맞추기 위해 testcases, answers sort
+	// 	Collections.sort(testcases);
+	// 	Collections.sort(answers);
+	//
+	// 	return ExecuteFileSet.of(sourceCodeFile, testcases, answers, outputFile, errorFile);
+	//
+	// }
+
+	public boolean deleteAllFiles(String fileExtension, AllFilesSet allFilesSet) {
+
+		// 삭제되지 않으면 Error 발생
+		boolean deletedSourceCodeFile = allFilesSet.getSourceCodeFile().delete();
+
+		// python은 excuteFile이 없음.
+		boolean deletedExcuteFile;
+		if(fileExtension.equals("py")){
+			 deletedExcuteFile = true;
+		}else{
+			 deletedExcuteFile = allFilesSet.getExcuteFile().delete();
+		}
+		boolean deletedOutputFile = allFilesSet.getOutputFile().delete();
+		boolean deletedErrorFile = allFilesSet.getErrorFile().delete();
+
+		List<File> testcases = allFilesSet.getTestcases();
+		List<File> answers = allFilesSet.getAnswers();
 		boolean isDeletedtestcases = true;
 		boolean isDeletedAnswers = true;
-		boolean isDeletedOutputFile = executeFileSet.getOutputFile().delete();
-		boolean isDeletedErrorFile = executeFileSet.getErrorFile().delete();
-
-		List<File> testcases = executeFileSet.getTestcases();
-		List<File> answers = executeFileSet.getAnswers();
 		for (int i = 0; i < testcases.size(); i++) {
 			isDeletedtestcases = isDeletedtestcases && testcases.get(i).delete();
 			isDeletedAnswers = isDeletedAnswers && answers.get(i).delete();
 		}
 
-		// codeJudgeFileSet.getTestcases().forEach(File::delete);
-		// codeJudgeFileSet.getAnswers().forEach(File::delete);
-		return isDeletedSourceCode && isDeletedtestcases && isDeletedAnswers && isDeletedOutputFile
-			&& isDeletedErrorFile;
+		if (deletedSourceCodeFile && deletedExcuteFile && deletedOutputFile
+			&& deletedErrorFile && isDeletedtestcases && isDeletedAnswers) {
+			return true;
+		} else {
+			log.error("Error in deleting files");
+			log.error("deletedSourceCodeFile : {}", deletedSourceCodeFile);
+			log.error("deletedExcuteFile : {}", deletedExcuteFile);
+			log.error("deletedOutputFile : {}", deletedOutputFile);
+			log.error("deletedErrorFile : {}", deletedErrorFile);
+			log.error("isDeletedtestcases : {}", isDeletedtestcases);
+			log.error("isDeletedAnswers : {}", isDeletedAnswers);
+			throw new RuntimeException("Error in deleting files");
+		}
 	}
 
 	public List<File> getFileListFromS3(String uuid, long algorithmId, String folerName) {
@@ -113,7 +165,7 @@ public class S3Repository {
 			.prefix(folderNamePath + "/")
 			.delimiter("/")
 			.build();
-
+		log.info("folderNamePath : {}", folderNamePath);
 		// folerNameList에 folerName 파일들 넣기 - folder 제외
 		ListObjectsV2Response listObjectsV2Response;
 		do {
@@ -122,6 +174,8 @@ public class S3Repository {
 				// 객체의 키가 폴더 이름으로 시작하지 않으면 파일로 간주
 				if (!object.key().endsWith("/")) {
 					folderNameList.add(downloadFileFromS3(uuid, object.key()));
+					log.info("folderNameList : {}", folderNameList);
+					log.info("folderNameList size : {}", folderNameList.size());
 				}
 			}
 
@@ -163,17 +217,14 @@ public class S3Repository {
 		} catch (NoSuchKeyException e) {
 			log.error("NoSuchKeyException - Error in downloading file from S3");
 			log.error(e.awsErrorDetails().errorMessage());
+			throw new RuntimeException(e);
 		} catch (InvalidObjectStateException e) {
+			log.error("InvalidObjectStateException - Error in downloading file from S3");
 			log.error(e.awsErrorDetails().errorMessage());
-		} catch (S3Exception e) {
-			log.error(e.awsErrorDetails().errorMessage());
-		} catch (AwsServiceException e) {
-			log.error(e.awsErrorDetails().errorMessage());
+			throw new RuntimeException(e);
 		} catch (SdkClientException e) {
 			log.error(e.getMessage());
-		} catch (Exception e) {
-			log.error(e.getMessage());
-
+			throw new RuntimeException(e);
 		} finally {
 
 			//TODO 사용하고 전부 닫아줘야 하나?-
@@ -184,6 +235,7 @@ public class S3Repository {
 		String[] split = s3Key.split("/");
 		String downloadPathFile = uuid + "_" + split[split.length - 1];
 		File file = new File(downloadPathFile);
+		log.info("file : {}", file);
 		OutputStream os; // AutoClosable	구현
 		try {
 			os = new FileOutputStream(file);

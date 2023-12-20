@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SubmitRequestDto {
+
 	String s3Key;
 	long algorithmId;
 	String fileExtension;

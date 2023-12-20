@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Service;
 
-import com.goojeans.runserver.dto.file.CompiledFileSet;
+import com.goojeans.runserver.dto.file.AllFilesSet;
 import com.goojeans.runserver.dto.file.SourceCodeFileSet;
 import com.goojeans.runserver.dto.file.ExecuteFileSet;
 import com.goojeans.runserver.dto.request.SubmitRequestDto;
@@ -38,65 +38,61 @@ public class SubmitService {
 
 	public ApiResponse<SubmitResponseDto> codeJudge(SubmitRequestDto submitRequestDto) {
 
+		AllFilesSet allFilesSet = null;
 		ExecuteFileSet executeFileSet;
 		ApiResponse<SubmitResponseDto> submitResponseDto;
-
+		final String fileExtension = submitRequestDto.getFileExtension();
 		try {// TODO 여기서 try catch finally로 잡고 생성한 file 무조건 delete하기!!!!
 			// S3에서 user의 sourcecode, testcase, answer 파일 가져오기 - sort까지
 
 			long algorithmId = submitRequestDto.getAlgorithmId();
 			String s3Key = submitRequestDto.getS3Key();
-			String fileExtension = submitRequestDto.getFileExtension();
 			String uuid = UUID.randomUUID().toString();
+			allFilesSet = s3Repository.downloadAllFilesFromS3(fileExtension, algorithmId, uuid, s3Key);
 
-			if (!fileExtension.equals("py")) {
-
+			if (fileExtension.equals("cpp")) {
+				// cpp
 				// compile할 sourceCode 다운로드
-				SourceCodeFileSet sourceCodeFileSet = s3Repository.downloadCompileFilesFromS3(algorithmId, uuid, s3Key);
-
+				SourceCodeFileSet sourceCodeFileSet = SourceCodeFileSet.of(allFilesSet);
 				// compile 진행
-				CompiledFileSet compiledFileSet = compileFiles(sourceCodeFileSet);
+				executeFileSet = compileFiles(fileExtension, sourceCodeFileSet);
 
-				List<File> testcases = s3Repository.getFileListFromS3(uuid, algorithmId, "testcases");
-				List<File> answers = s3Repository.getFileListFromS3(uuid, algorithmId, "answers");
-				executeFileSet = ExecuteFileSet.of(compiledFileSet, testcases, answers);
-
+			} else if (fileExtension.equals("java")) {
+				// java
+				// compile할 sourceCode 다운로드
+				SourceCodeFileSet sourceCodeFileSet = SourceCodeFileSet.of(allFilesSet);
+				// compile 진행
+				executeFileSet = compileFiles(fileExtension, sourceCodeFileSet);
 			} else {
-
 				// python3
-				executeFileSet = s3Repository.downloadFilesFromS3(algorithmId, uuid, s3Key);
-
+				executeFileSet = ExecuteFileSet.pythonOf(allFilesSet);
 			}
 
 			// 채점 진행 - 실행 파일 실행
-			submitResponseDto = checkTheAnswer(executeFileSet);
+			submitResponseDto = checkTheAnswer(fileExtension, executeFileSet);
 
-			//cpp
-			// ResponseDto responseDto = codeJudgeCpp(codeJudgeFileSet);
-			// log.info("responseDto: {}", submitResponseDto.getData().getResult());
 		} catch (Exception e) {
-			log.error("Error in codeJudge");
-			return ApiResponse.submitError(e.getMessage());
+			// TODO Exception 한번에 잡기!!! -> e.getMessage()
+			log.error("{}: {}", e.getClass().getName(), e.getMessage());
+			return ApiResponse.submitServerError(e.getMessage());
 		} finally {
 
 			// TODO 모든 File 지웠는지 확인 - @test
-			// TODO 한 번에 지우는 방법? - https://bluemint.tistory.com/29
-			// TODO true인지 다시 확인해 보기.
 			// 생성한 모든 파일 삭제
-			boolean isAllDeleted = s3Repository.deleteAllFiles(executeFileSet);
-
-			// TODO 삭제되지 않았으면 처리 - RuntimeException ?
-			if (!isAllDeleted) {
-				log.error("Error in deleting all files");
-				// throw new RuntimeException("Error in deleting all files");
+			try {
+				boolean isAllDeleted = s3Repository.deleteAllFiles(fileExtension, allFilesSet);
+			} catch (RuntimeException e) {
+				// TODO python일 때 deletedExcuteFile : false
+				return ApiResponse.submitServerError(e.getMessage());
 			}
+
 		}
 		return submitResponseDto;
 	}
 
-	public CompiledFileSet compileFiles(SourceCodeFileSet sourceCodeFileSet) {
+	public ExecuteFileSet compileFiles(String fileExtension, SourceCodeFileSet sourceCodeFileSet) {
 
-
+		return null;
 	}
 
 	public ApiResponse<SubmitResponseDto> codeJudgeCpp(ExecuteFileSet executeFileSet) {
@@ -145,12 +141,8 @@ public class SubmitService {
 		return ApiResponse.submitOk();
 	}
 
-	private ApiResponse<SubmitResponseDto> checkTheAnswer(ExecuteFileSet executeFileSet) {
+	private ApiResponse<SubmitResponseDto> checkTheAnswer(String fileExtension, ExecuteFileSet executeFileSet) {
 
-		//
-		// String[] cmd = getCompileCmd("python3", codeJudgeFileSet.getSourceCode().getPath());
-		// String[] cmd = getCompileCmd("cpp", codeJudgeFileSet.getSourceCode().getPath());
-		// String[] cmd = getCompileCmd("java", codeJudgeFileSet.getSourceCode().getPath());
 
 		// 각 testCase와 answer를 비교해 정답 여부 확인하기
 		// python3 {현재 실행할 파일 경로}

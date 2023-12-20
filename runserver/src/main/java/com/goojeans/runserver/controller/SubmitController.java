@@ -23,7 +23,7 @@ public class SubmitController {
     private final SubmitService submitService;
 
     @PostMapping
-    public ApiResponse submit(@RequestBody SubmitRequestDto submitRequestDto) {
+    public ApiResponse<SubmitResponseDto> submit(@RequestBody SubmitRequestDto submitRequestDto) {
 
         // TODO Controller에서 ! 받을 수 있도록!! ApiResponse로 변환!!!!!
         ApiResponse<SubmitResponseDto> submitResponseDto = submitService.codeJudge(submitRequestDto);

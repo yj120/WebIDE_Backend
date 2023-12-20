@@ -14,15 +14,15 @@ import lombok.NoArgsConstructor;
 public class AllFilesSet {
 
 	private File sourceCodeFile;
-	private File CompileFile;
-	private File ExcuteFile;
+	private File excuteFile;
 	private File errorFile;
 	private File outputFile;
 	private List<File> testcases;
 	private List<File> answers;
 
-	public static AllFilesSet of(File sourceCode, File CompileFile, File ExcuteFile, File outputFile, File errorFile, List<File> testcasesList, List<File> answerFile) {
-		return new AllFilesSet(sourceCode, CompileFile, ExcuteFile, outputFile, errorFile, testcasesList, answerFile);
+	public static AllFilesSet of(File sourceCode, File CompileFile, File outputFile, File errorFile,
+		List<File> testcasesList, List<File> answerFile) {
+		return new AllFilesSet(sourceCode, CompileFile, outputFile, errorFile, testcasesList, answerFile);
 	}
 
 }

@@ -18,14 +18,12 @@ public class ExecuteFileSet {
 	private File errorFile;
 	private File outputFile;
 
-	public static ExecuteFileSet of(File sourceCode, List<File> testcasesList, List<File> answerFile, File outputFile, File errorFile) {
-		return new ExecuteFileSet(sourceCode, testcasesList, answerFile, outputFile, errorFile);
+	public static ExecuteFileSet of(AllFilesSet allFilesSet) {
+	return new ExecuteFileSet(allFilesSet.getExcuteFile(), allFilesSet.getTestcases(), allFilesSet.getAnswers(), allFilesSet.getOutputFile(), allFilesSet.getErrorFile()	);
 	}
 
-	public static ExecuteFileSet of(CompiledFileSet compiledFileSet, List<File> testcasesList, List<File> answerFile) {
-		return new ExecuteFileSet(compiledFileSet.getCompileFile(),testcasesList, answerFile, compiledFileSet.getErrorFile(), compiledFileSet.getOutputFile());
+	public static ExecuteFileSet pythonOf(AllFilesSet allFilesSet) {
+		return new ExecuteFileSet(allFilesSet.getSourceCodeFile(), allFilesSet.getTestcases(), allFilesSet.getAnswers(), allFilesSet.getOutputFile(), allFilesSet.getErrorFile()	);
 	}
-
-
 
 }
