@@ -1,5 +1,6 @@
 package com.goojeans.idemainserver.repository.fileprocessing;
 
+import com.goojeans.idemainserver.domain.entity.Algorithm;
 import com.goojeans.idemainserver.domain.entity.RunCode;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -29,7 +31,7 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
     private String bucketName;
 
     @Override
-    public File findSourceCode(String filePath) {
+    public File findFile(String filePath) {
         // use uuid for unique file name to make it safe environment for many requests
         String fileName = "temp_" + UUID.randomUUID();
         File file = new File(fileName);
@@ -88,14 +90,14 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
     @Override
     public String modifyFilePath(String beforeFilePath, String afterFilePath) {
 
-        CopyObjectRequest copyReqeust = CopyObjectRequest.builder()
+        CopyObjectRequest copyRequest = CopyObjectRequest.builder()
                 .sourceBucket(bucketName)
                 .sourceKey(beforeFilePath)
                 .destinationBucket(bucketName)
                 .destinationKey(afterFilePath)
                 .build();
         try {
-            s3.copyObject(copyReqeust);
+            s3.copyObject(copyRequest);
         } catch (Exception e) {
             log.error(e.getMessage());
             return "fail";
@@ -121,15 +123,19 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
             em.persist(runCode);
             return runCode;
         }
-        findCode.builder()
-                .runResult(runCode.getRunResult())
-                .sourceUrl(runCode.getSourceUrl());
 
+        findCode.setSourceUrl(runCode.getSourceUrl());
+        findCode.setSubmitResult(runCode.getSubmitResult());
         return findCode;
     }
 
     @Override
     public RunCode getMetaData(String filePath) {
         return em.find(RunCode.class, filePath);
+    }
+
+    @Override
+    public Optional<Algorithm> findAlgorithmById(Long id) {
+        return Optional.ofNullable(em.find(Algorithm.class, id));
     }
 }
