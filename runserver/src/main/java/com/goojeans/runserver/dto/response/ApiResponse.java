@@ -1,4 +1,4 @@
-package com.goojeans.runserver.dto;
+package com.goojeans.runserver.dto.response;
 
 import java.util.ArrayList;
 import java.util.List;
