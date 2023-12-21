@@ -13,15 +13,12 @@ import lombok.NoArgsConstructor;
 public class SourceCodeFileSet {
 
 	private File sourceCodeFile;
+	private File ExcuteFile;
 	private File errorFile;
 	private File outputFile;
 
-	// private String language;
-	// private String filePath;
-	// private String executableFilePath;
-
 	public static SourceCodeFileSet of(AllFilesSet allFilesSet) {
-		return new SourceCodeFileSet(allFilesSet.getSourceCodeFile(), allFilesSet.getErrorFile(), allFilesSet.getOutputFile());
+		return new SourceCodeFileSet(allFilesSet.getSourceCodeFile(),allFilesSet.getExcuteFile(), allFilesSet.getErrorFile(), allFilesSet.getOutputFile());
 	}
 
 }
