@@ -42,36 +42,44 @@ public class S3Repository {
 
 		// sourceCodeFile 다운로드
 		File sourceCodeFile = downloadFileFromS3(uuid, s3Key);
-
-		// excuteFile 다운로드
-		File excuteFile;
-		if (fileExtension.equals("cpp")) {
-			 excuteFile = new File(uuid + ".o");
-		} else if (fileExtension.equals("java")) {
-			 excuteFile = new File(uuid + ".java");
-		} else {
-			 excuteFile = new File(uuid + ".py");
-		}
-
-		// error 저장할 파일 생성
-		File errorFile = new File(uuid + "_error.txt");
-
-		// 출력 값 저장할 파일 생성
-		File outputFile = new File(uuid + "_output.txt");
-
 		// S3에서 해당 문제의 testcase 파일 List 가져오기
 		List<File> testcases = getFileListFromS3(uuid, algorithmId, "testcases");
 
 		// S3에서 해당 문제의 answer 파일 List 가져오기
 		List<File> answers = getFileListFromS3(uuid, algorithmId, "answers");
 
+		File excuteFile;
+		File errorFile;
+		File outputFile;
+
+		try {
+			// excuteFile 다운로드
+			if (fileExtension.equals("cpp")) {
+				excuteFile = new File(uuid+".out");
+				excuteFile.createNewFile();
+			} else if (fileExtension.equals("java")) {
+				excuteFile = new File(uuid + ".java");
+				excuteFile.createNewFile();
+			} else {
+				excuteFile = new File(uuid + ".py");
+				excuteFile.createNewFile();
+			}
+
+			// error 저장할 파일 생성
+			errorFile = new File(uuid + "_error.txt");
+			errorFile.createNewFile();
+			// 출력 값 저장할 파일 생성
+			outputFile = new File(uuid + "_output.txt");
+			outputFile.createNewFile();
+		} catch (IOException e) {
+			log.error("Error in creating temp file");
+			throw new RuntimeException(e);
+		}
+
 		Collections.sort(testcases);
 		Collections.sort(answers);
 
-		log.info("sourceCodeFile : {}", sourceCodeFile);
 		log.info("excuteFile : {}", excuteFile);
-		log.info("errorFile : {}", errorFile);
-		log.info("outputFile : {}", outputFile);
 
 		return AllFilesSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testcases, answers);
 	}
@@ -124,11 +132,11 @@ public class S3Repository {
 
 		// python은 excuteFile이 없음.
 		boolean deletedExcuteFile;
-		if(fileExtension.equals("py")){
-			 deletedExcuteFile = true;
-		}else{
-			 deletedExcuteFile = allFilesSet.getExcuteFile().delete();
-		}
+		// if (fileExtension.equals("py")) {
+		// 	deletedExcuteFile = true;
+		// } else {
+			deletedExcuteFile = allFilesSet.getExcuteFile().delete();
+		// }
 		boolean deletedOutputFile = allFilesSet.getOutputFile().delete();
 		boolean deletedErrorFile = allFilesSet.getErrorFile().delete();
 
@@ -145,13 +153,6 @@ public class S3Repository {
 			&& deletedErrorFile && isDeletedtestcases && isDeletedAnswers) {
 			return true;
 		} else {
-			log.error("Error in deleting files");
-			log.error("deletedSourceCodeFile : {}", deletedSourceCodeFile);
-			log.error("deletedExcuteFile : {}", deletedExcuteFile);
-			log.error("deletedOutputFile : {}", deletedOutputFile);
-			log.error("deletedErrorFile : {}", deletedErrorFile);
-			log.error("isDeletedtestcases : {}", isDeletedtestcases);
-			log.error("isDeletedAnswers : {}", isDeletedAnswers);
 			throw new RuntimeException("Error in deleting files");
 		}
 	}
@@ -174,8 +175,6 @@ public class S3Repository {
 				// 객체의 키가 폴더 이름으로 시작하지 않으면 파일로 간주
 				if (!object.key().endsWith("/")) {
 					folderNameList.add(downloadFileFromS3(uuid, object.key()));
-					log.info("folderNameList : {}", folderNameList);
-					log.info("folderNameList size : {}", folderNameList.size());
 				}
 			}
 
@@ -235,7 +234,6 @@ public class S3Repository {
 		String[] split = s3Key.split("/");
 		String downloadPathFile = uuid + "_" + split[split.length - 1];
 		File file = new File(downloadPathFile);
-		log.info("file : {}", file);
 		OutputStream os; // AutoClosable	구현
 		try {
 			os = new FileOutputStream(file);
