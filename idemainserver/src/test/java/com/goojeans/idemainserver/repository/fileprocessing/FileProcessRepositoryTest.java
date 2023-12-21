@@ -1,5 +1,6 @@
 package com.goojeans.idemainserver.repository.fileprocessing;
 
+import com.goojeans.idemainserver.domain.dto.response.FileResponses.FileTreeResponse;
 import com.goojeans.idemainserver.domain.entity.RunCode;
 import com.goojeans.idemainserver.util.SubmitResult;
 import jakarta.persistence.EntityManager;
@@ -22,6 +23,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -88,6 +91,7 @@ class FileProcessRepositoryTest {
             fileCompare(testFile, findFile);
         } catch (IOException e) {
             log.error(e.getMessage());
+            Assertions.fail();
         } finally {
             findFile.delete();
         }
@@ -97,7 +101,7 @@ class FileProcessRepositoryTest {
     @Test
     void saveFile() {
         //Given
-        String savePath = "1/1/test.py";
+        String savePath = "1/1/empty.py";
         String findFilePath = "find.py";
 
         File findFile = new File(findFilePath);
@@ -124,6 +128,7 @@ class FileProcessRepositoryTest {
 
         } catch (Exception e) {
             log.error(e.getMessage());
+            Assertions.fail();
         } finally {
             findFile.delete();
         }
@@ -187,6 +192,7 @@ class FileProcessRepositoryTest {
             fileCompare(testFile, findFile);
         } catch (Exception e) {
             log.error(e.getMessage());
+            Assertions.fail();
         } finally {
             findFile.delete();
         }
@@ -264,16 +270,22 @@ class FileProcessRepositoryTest {
         //Then
         assertThat(metaData).isEqualTo(runCode);
 
-        // TODO: 경로 한 번에 내려주기
-        ListObjectsV2Request request = ListObjectsV2Request.builder()
-                .bucket(bucketName)
-                .build();
+    }
 
-        ListObjectsV2Response result = s3.listObjectsV2(request);
-        for (S3Object object : result.contents()) {
-            log.info("check key={}", object.key());
+    @DisplayName("파일 트리 불러오기")
+    @Test
+    void getFileTree() {
+        //Given
+        String prefix = "1/1";
+
+        //When
+        List<FileTreeResponse> fileTrees = repository.findFileTrees(prefix);
+
+        //Then
+        assertThat(fileTrees.contains(new FileTreeResponse("1/1/test.py"))).isTrue();
+        for (FileTreeResponse temp : fileTrees) {
+            log.info("contents={}", temp);
         }
-
     }
 
     private static void fileCompare(File testAlgoFile, File findAlgofile) throws IOException {

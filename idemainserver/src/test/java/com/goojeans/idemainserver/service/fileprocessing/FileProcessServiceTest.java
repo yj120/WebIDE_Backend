@@ -63,6 +63,7 @@ class FileProcessServiceTest {
         testFile.delete();
     }
 
+    @DisplayName("소스 코드 찾기")
     @Test
     void findSourceCode() {
         //Given
@@ -84,6 +85,7 @@ class FileProcessServiceTest {
 
     }
 
+    @DisplayName("알고리즘 파일 찾기")
     @Test
     void findAlgoText() {
         //Given
@@ -102,6 +104,7 @@ class FileProcessServiceTest {
 
     }
 
+    @DisplayName("실행 & 저장")
     @Test
     void executeAndSaveCode() {
         //Given
@@ -230,6 +233,7 @@ class FileProcessServiceTest {
 
     }
 
+    @DisplayName("파일 경로 수정")
     @Test
     void modifyFileStructure() {
         //Given
@@ -239,19 +243,22 @@ class FileProcessServiceTest {
         String after = "move/file.py";
         String beforeFileKey = "1/1/folder/file.py";
         String afterFileKey = "1/1/move/file.py";
+        String prefix = "1/1";
 
         ModifyPathRequest request = new ModifyPathRequest(before, after, userId, algorithmId);
 
         when(repository.modifyFilePath(beforeFileKey, afterFileKey)).thenReturn("success");
+        when(repository.findFileTrees(prefix)).thenReturn(List.of(new FileTreeResponse(afterFileKey)));
 
         //When
-        FileProcessResponse<MessageResponse> response = service.modifyFileStructure(request);
+        FileProcessResponse<FileTreeResponse> response = service.modifyFileStructure(request);
 
         //Then
-        assertThat(response.getData().get(0).getMessage()).isEqualTo("success");
+        assertThat(response.getData().contains(new FileTreeResponse("1/1/move/file.py"))).isTrue();
 
     }
 
+    @DisplayName("파일 삭제")
     @Test
     void deleteFile() {
         //Given
@@ -259,15 +266,61 @@ class FileProcessServiceTest {
         Long userId = 1L;
         Long algorithmId = 1L;
         String fileKey = "1/1/folder/file.py";
+        String prefix = "1/1";
 
         DeleteFileRequest request = new DeleteFileRequest(deletePath, algorithmId, userId);
         when(repository.deleteFile(fileKey)).thenReturn("success");
+        when(repository.findFileTrees(prefix)).thenReturn(null);
 
         //When
-        FileProcessResponse<MessageResponse> response = service.deleteFile(request);
+        FileProcessResponse<FileTreeResponse> response = service.deleteFile(request);
 
         //Then
-        assertThat(response.getData().get(0).getMessage()).isEqualTo("success");
+        assertThat(response.getData()).isNull();
+
+    }
+
+    @DisplayName("파일 트리 찾기")
+    @Test
+    void findFileTree() {
+        //Given
+        Long algorithmId = 1L;
+        Long userId = 1L;
+        String prefix = algorithmId + "/" + userId;
+
+        FileTreeRequest testRequest = new FileTreeRequest(algorithmId, userId);
+        FileTreeResponse testResponse = new FileTreeResponse("1/1/test.py");
+        when(repository.findFileTrees(prefix)).thenReturn(List.of(testResponse));
+
+        //When
+        FileProcessResponse<FileTreeResponse> result = service.findFileTree(testRequest);
+
+        //Then
+        assertThat(result.getData().contains(testResponse)).isTrue();
+
+    }
+
+    @DisplayName("파일 or 폴더 생성")
+    @Test
+    void createFileOrFolder() {
+        //Given
+        Long algorithmId = 1L;
+        Long userId = 1L;
+        String createPath = "test.py";
+        String prefix = "1/1";
+        String testPath = algorithmId + "/" + userId + "/" + createPath;
+
+        CreateFileRequest testRequest = new CreateFileRequest(algorithmId, userId, createPath);
+        FileTreeResponse testTree = new FileTreeResponse(createPath);
+
+        when(repository.saveFile(eq(testPath), any(File.class))).thenReturn("success");
+        when(repository.findFileTrees(prefix)).thenReturn(List.of(testTree));
+
+        //When
+        FileProcessResponse<FileTreeResponse> result = service.createFileOrFolder(testRequest);
+
+        //Then
+        assertThat(result.getData().contains(testTree)).isTrue();
 
     }
 }
