@@ -8,16 +8,16 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public enum Answer {
+public enum Extension {
 
-	CORRECT("correct"),
-	WRONG("wrong"),
-	TIMEOUT("timeout"),
-	SERVER_ERROR("error");
+	PYTHON3("PYTHON3"),
+	JAVA("JAVA"),
+	CPP("CPP");
 
-	private String answer;
+	private String extension;
 
-	public Answer from(String answer) {
-		return Answer.valueOf(answer.toUpperCase());
+	public static Extension from(String extension) {
+		return Extension.valueOf(extension.toUpperCase());
 	}
+
 }

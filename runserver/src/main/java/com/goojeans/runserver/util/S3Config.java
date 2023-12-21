@@ -1,4 +1,4 @@
-package com.goojeans.runserver;
+package com.goojeans.runserver.util;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
