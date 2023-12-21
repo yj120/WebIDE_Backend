@@ -15,11 +15,7 @@ public class ExecuteResponseDto {
 
 	private String executeResult;
 
-	public static ExecuteResponseDto ok(String executeResult) {
-		return new ExecuteResponseDto(executeResult);
-	}
-
-	public static ExecuteResponseDto userCodeError(String executeResult) {
+	public static ExecuteResponseDto of(String executeResult) {
 		return new ExecuteResponseDto(executeResult);
 	}
 
