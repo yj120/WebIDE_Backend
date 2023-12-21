@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class AllFilesSet {
+public class SubmitAllFilesSet {
 
 	private File sourceCodeFile;
 	private File excuteFile;
@@ -20,9 +20,9 @@ public class AllFilesSet {
 	private List<File> testcases;
 	private List<File> answers;
 
-	public static AllFilesSet of(File sourceCode, File CompileFile, File outputFile, File errorFile,
+	public static SubmitAllFilesSet of(File sourceCode, File CompileFile, File outputFile, File errorFile,
 		List<File> testcasesList, List<File> answerFile) {
-		return new AllFilesSet(sourceCode, CompileFile, outputFile, errorFile, testcasesList, answerFile);
+		return new SubmitAllFilesSet(sourceCode, CompileFile, outputFile, errorFile, testcasesList, answerFile);
 	}
 
 }

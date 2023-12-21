@@ -18,14 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/submit")
 public class SubmitController {
-
+    // TODO DTO enum 일치하지 않으면 404!!!! 처리해야 함!!!!
     // TODO 일치하는 링크 없는 경우 에러로 메인으로 내려 주기. -> ControllerAdvice
     private final SubmitService submitService;
 
     @PostMapping
     public ApiResponse<SubmitResponseDto> submit(@RequestBody SubmitRequestDto submitRequestDto) {
 
-        // TODO Controller에서 ! 받을 수 있도록!! ApiResponse로 변환!!!!!
+        // Error 포함 Response
         ApiResponse<SubmitResponseDto> submitResponseDto = submitService.codeJudge(submitRequestDto);
 
         return submitResponseDto;
