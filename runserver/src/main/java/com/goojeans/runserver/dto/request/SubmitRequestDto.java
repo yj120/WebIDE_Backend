@@ -1,5 +1,7 @@
 package com.goojeans.runserver.dto.request;
 
+import com.goojeans.runserver.util.Extension;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,9 +14,9 @@ public class SubmitRequestDto {
 
 	String s3Key;
 	long algorithmId;
-	String fileExtension;
+	Extension fileExtension;
 
-	public static SubmitRequestDto from(String s3Key, long algorithmId, String fileExtension) {
+	public static SubmitRequestDto from(String s3Key, long algorithmId, Extension fileExtension) {
 		return new SubmitRequestDto(s3Key, algorithmId, fileExtension);
 	}
 
