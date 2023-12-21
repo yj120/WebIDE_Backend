@@ -1,7 +1,7 @@
 package com.goojeans.idemainserver.repository.fileprocessing;
 
 import com.goojeans.idemainserver.domain.entity.RunCode;
-import com.goojeans.idemainserver.util.SolvedStatus;
+import com.goojeans.idemainserver.util.SubmitResult;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -10,15 +10,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -73,9 +71,9 @@ class FileProcessRepositoryTest {
 
     @DisplayName("소스/알고리즘 불러오기")
     @Test
-    void findSourceCode() {
+    void findFile() {
         //Given
-        String testPath = "algorithmId/userId/test/test.py";
+        String testPath = "1/1/test.py";
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(testPath)
@@ -83,7 +81,7 @@ class FileProcessRepositoryTest {
         s3.putObject(putObjectRequest, RequestBody.fromFile(Paths.get(testFile.getAbsolutePath())));
 
         //When
-        File findFile = repository.findSourceCode(testPath);
+        File findFile = repository.findFile(testPath);
 
         //Then
         try {
@@ -99,7 +97,7 @@ class FileProcessRepositoryTest {
     @Test
     void saveFile() {
         //Given
-        String savePath = "algorithmId/saveTest/save.py";
+        String savePath = "1/1/test.py";
         String findFilePath = "find.py";
 
         File findFile = new File(findFilePath);
@@ -135,7 +133,7 @@ class FileProcessRepositoryTest {
     @Test
     void deleteFile() {
         //Given
-        String deletePath = "algorithmId/userId/delete/test.py";
+        String deletePath = "1/1/delete/test.py";
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(deletePath)
@@ -152,14 +150,15 @@ class FileProcessRepositoryTest {
                 .build();
         log.info("result={}", result);
         Assertions.assertThrows(NoSuchKeyException.class, () -> s3.getObjectAsBytes(getObjectRequest));
+
     }
 
     @DisplayName("S3 키 변경")
     @Test
     void modifyFilePath() {
         //Given
-        String beforePath = "algorithmId/userId/before/test.py";
-        String afterPath = "algorithmId/userId/modifyPath/test.py";
+        String beforePath = "1/1/before/test.py";
+        String afterPath = "1/1/modifyPath/test.py";
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(beforePath)
@@ -193,30 +192,70 @@ class FileProcessRepositoryTest {
         }
     }
 
-    @DisplayName("메타 데이터 저장/업데이트")
+    @DisplayName("메타 데이터 저장")
     @Test
     void saveMetaData() {
         //Given
-        String filePath = "algorithmId/userId/test.py";
-        String runResult = "12\n27";
-        RunCode runCode = new RunCode(filePath, runResult);
-
+        String filePath = "1/1/test.py";
+        SubmitResult updateResult = SubmitResult.CORRECT;
+        SubmitResult submitResult = SubmitResult.WRONG;
+        RunCode runCode = RunCode.builder()
+                .sourceUrl(filePath)
+                .submitResult(submitResult)
+                .build();
+        RunCode update = RunCode.builder()
+                .sourceUrl(filePath)
+                .submitResult(updateResult)
+                .build();
         //When
         RunCode saveRunCode = repository.saveMetaData(runCode);
 
         //Then
         RunCode findResult = em.find(RunCode.class, filePath);
-        log.info("find={}", findResult.getRunResult());
+        log.info("find={}", findResult.getSubmitResult());
+        repository.saveMetaData(update);
+
         assertThat(findResult).isEqualTo(saveRunCode);
+
+    }
+
+    @DisplayName("메타 데이터 업데이트")
+    @Test
+    void saveMetaDataUpdate() {
+        //Given
+        String filePath = "1/1/test.py";
+        SubmitResult updateResult = SubmitResult.CORRECT;
+        SubmitResult submitResult = SubmitResult.WRONG;
+        RunCode runCode = RunCode.builder()
+                .sourceUrl(filePath)
+                .submitResult(submitResult)
+                .build();
+        RunCode update = RunCode.builder()
+                .sourceUrl(filePath)
+                .submitResult(updateResult)
+                .build();
+        //When
+        repository.saveMetaData(runCode);
+        RunCode updateCode = repository.saveMetaData(update);
+
+        //Then
+        RunCode findResult = em.find(RunCode.class, filePath);
+        log.info("find={}", findResult.getSubmitResult());
+
+        assertThat(findResult).isEqualTo(updateCode);
+
     }
 
     @DisplayName("메타 데이터 불러오기")
     @Test
     void getMetaData() {
         //Given
-        String filePath = "algorithmId/userId/get.py";
-        String runResult = "12\n27";
-        RunCode runCode = new RunCode(filePath, runResult);
+        String filePath = "1/1/get.py";
+        SubmitResult submitResult = SubmitResult.CORRECT;
+        RunCode runCode = RunCode.builder()
+                .sourceUrl(filePath)
+                .submitResult(submitResult)
+                .build();
         em.persist(runCode);
 
         //When
@@ -225,6 +264,16 @@ class FileProcessRepositoryTest {
         //Then
         assertThat(metaData).isEqualTo(runCode);
 
+        // TODO: 경로 한 번에 내려주기
+        ListObjectsV2Request request = ListObjectsV2Request.builder()
+                .bucket(bucketName)
+                .build();
+
+        ListObjectsV2Response result = s3.listObjectsV2(request);
+        for (S3Object object : result.contents()) {
+            log.info("check key={}", object.key());
+        }
+
     }
 
     private static void fileCompare(File testAlgoFile, File findAlgofile) throws IOException {
@@ -232,5 +281,6 @@ class FileProcessRepositoryTest {
         byte[] file2Bytes = Files.readAllBytes(Paths.get(findAlgofile.getAbsolutePath()));
 
         assertThat(Arrays.equals(file1Bytes, file2Bytes)).isTrue();
+
     }
 }
