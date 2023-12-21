@@ -8,6 +8,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -38,18 +40,23 @@ public class SubmitService {
 	private static final String answers = "answers";
 
 	public ApiResponse<SubmitResponseDto> codeJudge(SubmitRequestDto submitRequestDto) {
-
-		AllFilesSet allFilesSet = null;
+		// TODO Extension만 JAVA, CPP, PYTHON3로 제한하기
+		AllFilesSet allFilesSet;
 		ExecuteFileSet executeFileSet;
-		ApiResponse<SubmitResponseDto> submitResponseDto;
+		ApiResponse<SubmitResponseDto> submitResult;
 		final String fileExtension = submitRequestDto.getFileExtension();
+		String uuid = UUID.randomUUID().toString();
+		File folder = null;
 		try {// TODO 여기서 try catch finally로 잡고 생성한 file 무조건 delete하기!!!!
 			// S3에서 user의 sourcecode, testcase, answer 파일 가져오기 - sort까지
 
 			long algorithmId = submitRequestDto.getAlgorithmId();
 			String s3Key = submitRequestDto.getS3Key();
-			String uuid = UUID.randomUUID().toString();
-			allFilesSet = s3Repository.downloadAllFilesFromS3(fileExtension, algorithmId, uuid, s3Key);
+			// 절대 경로 지정 및 디렉토리 생성
+			Path directories = Files.createDirectories(Paths.get(uuid)).toAbsolutePath();
+			String directoryPath = directories.toString() + "/";
+			folder = new File(directoryPath);
+			allFilesSet = s3Repository.downloadAllFilesFromS3(fileExtension, algorithmId, directoryPath, s3Key);
 
 			if (fileExtension.equals("cpp")) {
 				// cpp
@@ -73,8 +80,15 @@ public class SubmitService {
 				SourceCodeFileSet sourceCodeFileSet = SourceCodeFileSet.of(allFilesSet);
 				// compile 진행
 				int exitCode = compileSourceCodeFile(fileExtension, sourceCodeFileSet);
-				// TODO 임의로 ㅂ정, 바꿔하.
-				executeFileSet = ExecuteFileSet.pythonOf(allFilesSet);
+				log.info("compile exitCode: {}", exitCode);
+				if (exitCode != 0) {
+					String errors = fileToString(false, sourceCodeFileSet.getErrorFile());
+					log.info("compile error 발생: {}", errors);
+					// return ApiResponse.submitError(errors);
+					return ApiResponse.okFrom(Answer.WRONG);
+				} else {
+					executeFileSet = ExecuteFileSet.sourceCodeOf(allFilesSet, sourceCodeFileSet);
+				}
 
 			} else {
 				// python3
@@ -83,30 +97,46 @@ public class SubmitService {
 
 			// 채점 진행 - 실행 파일 실행
 			// TODO 실행,  채점 나누기.
-			submitResponseDto = checkTheAnswer(fileExtension, executeFileSet);
+			submitResult = checkTheAnswer(fileExtension, executeFileSet);
 
 		} catch (Exception e) {
 			// TODO Exception 한번에 잡기!!! -> e.getMessage()
-			log.error("{}: {}", e.getClass().getName(), e.getMessage());
+			log.error("{}", e.getMessage());
 			return ApiResponse.serverErrorFrom(Answer.SERVER_ERROR, e.getMessage());
 		} finally {
 
 			// TODO 모든 File 지웠는지 확인 - @test
-			// 생성한 모든 파일 삭제
-			try {
-				boolean isAllDeleted = s3Repository.deleteAllFiles(fileExtension, allFilesSet);
-			} catch (RuntimeException e) {
-				// TODO python일 때 deletedExcuteFile : false
-				return ApiResponse.serverErrorFrom(Answer.SERVER_ERROR, e.getMessage());
+			// 모두 지워지지 않았다면, 서버 에러 메시지 출력
+			if(!deleteFolder(folder)){
+				log.error("모든 File 지우기 실패");
+				return ApiResponse.serverErrorFrom(Answer.SERVER_ERROR, "모든 File 지우기 실패");
 			}
 
 		}
-		return submitResponseDto;
+		return submitResult;
+	}
+
+	private boolean deleteFolder(File folder) {
+
+		// TODO 무한 루프를 돌 수 있으니, 최대 10번만 돌게 하기?
+		while (folder.exists()) {
+			File[] folder_list = folder.listFiles(); //파일리스트 얻어오기
+
+			for (int j = 0; j < folder_list.length; j++) {
+				folder_list[j].delete(); //파일 삭제
+			}
+			if (folder_list.length == 0 && folder.isDirectory()) {
+				folder.delete(); //대상폴더 삭제
+			}
+		}
+
+		return true;
 	}
 
 	public int compileSourceCodeFile(String fileExtension, SourceCodeFileSet sourceCodeFileSet) {
 
-		String sourceCodeFilePath = sourceCodeFileSet.getSourceCodeFile().getPath();
+		File sourceCodeFile = sourceCodeFileSet.getSourceCodeFile();
+		String sourceCodeFilePath = sourceCodeFile.getPath();
 		String executeFilePath = sourceCodeFileSet.getExcuteFile().getPath();
 		// String executePath = executeFilePath.split(".o")[0];
 		String executePath = executeFilePath;
@@ -123,6 +153,9 @@ public class SubmitService {
 				processBuilder = new ProcessBuilder("g++", sourceCodeFilePath, "-o", executePath);
 				log.info("executePath: {}", executePath);
 			} else {
+
+				sourceCodeFilePath = sourceCodeFile.getPath();
+				// newFile.getPath로 해야 compile 성공... 그럼 기존은..어디에 있는 거지?
 				processBuilder = new ProcessBuilder("javac", sourceCodeFilePath);
 			}
 
@@ -169,45 +202,6 @@ public class SubmitService {
 		}
 		return exitCode;
 	}
-	//
-	// public ApiResponse<SubmitResponseDto> codeJudgeCpp(ExecuteFileSet executeFileSet) {
-	//
-	// 	String path = executeFileSet.getExcuteFile().getPath();
-	//
-	// 	File outputFile = executeFileSet.getOutputFile();
-	// 	File errorFile = executeFileSet.getErrorFile();
-	//
-	// 	ProcessBuilder builder = new ProcessBuilder("g++", path, "-o", "./test-hello-code");
-	//
-	// 	// builder.redirectInput(inputFile);
-	// 	builder.redirectOutput(outputFile);
-	// 	builder.redirectError(errorFile);
-	//
-	// 	Process compileProcess = null;
-	// 	try {
-	// 		compileProcess = builder.start();
-	// 		; // 컴파일이 완료될 때까지 기다림
-	// 		if (compileProcess.waitFor(3, TimeUnit.SECONDS)) {
-	// 			;
-	//
-	// 			// SubmitResponseDto submitResponseDto = SubmitResponseDto.userCodeError(fileToString(true, errorFile));
-	// 			return ApiResponse.submitOk();
-	// 		}
-	//
-	// 		builder = new ProcessBuilder("./test-hello-code");
-	// 		Process runProcess = builder.start();
-	// 		log.info("outputFile: {}", fileToString(false, outputFile));
-	// 		runProcess.waitFor(2, TimeUnit.SECONDS); // 실행이 완료될 때까지 기다림
-	//
-	// 		return ApiResponse.submitOk();
-	// 	} catch (IOException e) {
-	// 		throw new RuntimeException(e);
-	// 	} catch (InterruptedException e) {
-	// 		throw new RuntimeException(e);
-	// 	}
-	//
-	// 	// return ResponseDto.from(fileToString(outputFile));
-	// }
 
 	public ApiResponse<SubmitResponseDto> codeJudgeJava(String algorithmId, SubmitRequestDto submitRequestDto) {
 		return ApiResponse.okFrom(Answer.CORRECT);
@@ -224,12 +218,21 @@ public class SubmitService {
 				cmd);
 		} else if (fileExtension.equals("cpp")) {
 			log.info("정답 확인 시작");
-			String currentWorkingDir = System.getProperty("user.dir");
-			String[] cmd = {currentWorkingDir + File.separator + executeFileSet.getExcuteFile().getPath()};
+			// String currentWorkingDir = System.getProperty("user.dir");
+			String[] cmd = {executeFileSet.getExcuteFile().getPath()};
 			// log.info("cmd: {}", executeFileSet.getExcuteFile().getPath());
 			answer = isCorrect(executeFileSet, cmd);
 		} else {
-			String[] cmd = {"java", executeFileSet.getExcuteFile().getPath()};
+
+			// java
+
+			// String className = executeFileSet.getExcuteFile().getPath(); // 파일 확장자 제거
+			// String[] cmd = {"java", className};
+
+			String basePath = executeFileSet.getExcuteFile().getPath().replace("Main.class", "");
+			log.info("basePath: {}", basePath);
+			String[] cmd = {"java", "-cp", basePath, "Main"};
+
 			answer = isCorrect(executeFileSet, cmd);
 		}
 
@@ -286,7 +289,6 @@ public class SubmitService {
 				// 실행 시 timeout 시간 설정, 시간 초과 후 false 및 errorfile에는 "시간 초과" 출력
 				/// wait가 true면 끝, false면 아직 실행 중.
 				boolean wait = process.waitFor(2, TimeUnit.SECONDS);
-
 
 				// TODO testcase 시간 초과나는 걸 가장 먼저 넣어 놓기 -> 상관 없을 거 같음. 사람 개입 같으니 그냥 하기로 ㅇㅇ.
 				if (!wait) {

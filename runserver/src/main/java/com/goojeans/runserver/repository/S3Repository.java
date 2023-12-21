@@ -5,6 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import com.goojeans.runserver.dto.file.AllFilesSet;
+import com.goojeans.runserver.dto.file.SourceCodeFileSet;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,48 +42,56 @@ public class S3Repository {
 	@Value("${cloud.aws.s3.bucket}")
 	private String bucket;
 
-	public AllFilesSet downloadAllFilesFromS3(String fileExtension, long algorithmId, String uuid, String s3Key) {
+	public AllFilesSet downloadAllFilesFromS3(String fileExtension, long algorithmId, String dirAbsolutePath, String s3Key) {
 
-		// sourceCodeFile 다운로드
-		File sourceCodeFile = downloadFileFromS3(uuid, s3Key);
-		// S3에서 해당 문제의 testcase 파일 List 가져오기
-		List<File> testcases = getFileListFromS3(uuid, algorithmId, "testcases");
-
-		// S3에서 해당 문제의 answer 파일 List 가져오기
-		List<File> answers = getFileListFromS3(uuid, algorithmId, "answers");
-
-		File excuteFile;
-		File errorFile;
-		File outputFile;
+		File sourceCodeFile, excuteFile, errorFile, outputFile;
+		List<File> testcases, answers;
 
 		try {
+			// 절대 경로 지정 및 디렉토리 생성
+			Path directories = Files.createDirectories(Paths.get(dirAbsolutePath)).toAbsolutePath();
+			// Path directories = Files.createDirectory(directory);
+
+			String directoryPath = directories.toString()+"/";
+
+			// sourceCodeFile 다운로드
+			sourceCodeFile = downloadFileFromS3(directoryPath, s3Key);
+			if(fileExtension.equals("java")){
+				File newSourceCodeFile = new File(directoryPath + "Main.java");
+				sourceCodeFile.renameTo(newSourceCodeFile);
+				sourceCodeFile= newSourceCodeFile;
+			}
+			// S3에서 해당 문제의 testcase 파일 List 가져오기
+			testcases = getFileListFromS3(directoryPath, algorithmId, "testcases");
+
+			// S3에서 해당 문제의 answer 파일 List 가져오기
+			answers = getFileListFromS3(directoryPath, algorithmId, "answers");
+
+			// error 저장할 파일 생성
+			errorFile = new File(directoryPath + "error.txt");
+			errorFile.createNewFile();
+			// 출력 값 저장할 파일 생성
+			outputFile = new File(directoryPath + "output.txt");
+			outputFile.createNewFile();
+
 			// excuteFile 다운로드
 			if (fileExtension.equals("cpp")) {
-				excuteFile = new File(uuid+".out");
+				excuteFile = new File(directoryPath + "main.o");
 				excuteFile.createNewFile();
 			} else if (fileExtension.equals("java")) {
-				excuteFile = new File(uuid + ".java");
+				excuteFile = new File(directoryPath + "Main.class");
 				excuteFile.createNewFile();
 			} else {
-				excuteFile = new File(uuid + ".py");
+				excuteFile = new File(directoryPath + "Main.py");
 				excuteFile.createNewFile();
 			}
 
-			// error 저장할 파일 생성
-			errorFile = new File(uuid + "_error.txt");
-			errorFile.createNewFile();
-			// 출력 값 저장할 파일 생성
-			outputFile = new File(uuid + "_output.txt");
-			outputFile.createNewFile();
+			Collections.sort(testcases);
+			Collections.sort(answers);
+
 		} catch (IOException e) {
-			log.error("Error in creating temp file");
 			throw new RuntimeException(e);
 		}
-
-		Collections.sort(testcases);
-		Collections.sort(answers);
-
-		log.info("excuteFile : {}", excuteFile);
 
 		return AllFilesSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testcases, answers);
 	}
@@ -135,7 +147,7 @@ public class S3Repository {
 		// if (fileExtension.equals("py")) {
 		// 	deletedExcuteFile = true;
 		// } else {
-			deletedExcuteFile = allFilesSet.getExcuteFile().delete();
+		deletedExcuteFile = allFilesSet.getExcuteFile().delete();
 		// }
 		boolean deletedOutputFile = allFilesSet.getOutputFile().delete();
 		boolean deletedErrorFile = allFilesSet.getErrorFile().delete();
@@ -157,7 +169,7 @@ public class S3Repository {
 		}
 	}
 
-	public List<File> getFileListFromS3(String uuid, long algorithmId, String folerName) {
+	public List<File> getFileListFromS3(String directoriesPath, long algorithmId, String folerName) {
 
 		String folderNamePath = algorithmId + "/" + folerName;
 		List<File> folderNameList = new ArrayList<>();
@@ -174,7 +186,7 @@ public class S3Repository {
 			for (S3Object object : listObjectsV2Response.contents()) {
 				// 객체의 키가 폴더 이름으로 시작하지 않으면 파일로 간주
 				if (!object.key().endsWith("/")) {
-					folderNameList.add(downloadFileFromS3(uuid, object.key()));
+					folderNameList.add(downloadFileFromS3(directoriesPath, object.key()));
 				}
 			}
 
@@ -187,7 +199,7 @@ public class S3Repository {
 		return folderNameList;
 	}
 
-	private File downloadFileFromS3(String uuid, String s3Key) {
+	private File downloadFileFromS3(String directoriesPath, String s3Key) {
 
 		byte[] data = null;
 		try {
@@ -232,8 +244,9 @@ public class S3Repository {
 
 		// 파일 경로 지정 - UUID + 파일 이름, (millisecond도 가능.)
 		String[] split = s3Key.split("/");
-		String downloadPathFile = uuid + "_" + split[split.length - 1];
+		String downloadPathFile = directoriesPath + "_" + split[split.length - 1];
 		File file = new File(downloadPathFile);
+
 		OutputStream os; // AutoClosable	구현
 		try {
 			os = new FileOutputStream(file);
