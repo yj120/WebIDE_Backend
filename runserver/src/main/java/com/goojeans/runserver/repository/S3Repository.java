@@ -13,7 +13,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
-import com.goojeans.runserver.dto.file.AllFilesSet;
+import com.goojeans.runserver.dto.file.ExecuteAllFileSet;
+import com.goojeans.runserver.dto.file.SubmitAllFilesSet;
 import com.goojeans.runserver.util.Extension;
 
 import lombok.RequiredArgsConstructor;
@@ -50,12 +51,13 @@ public class S3Repository {
 	 * @return AllFilesSet - File sourceCodeFile, excuteFile, errorFile, outputFile / List<File> testcases, answers;
 	 * @throws IOException, RuntimeException, NullPointerException, SdkClientException, NoSuchKeyException, InvalidObjectStateException, S3Exception, FileNotFoundException,
 	 */
-	public AllFilesSet downloadAllFilesFromS3(Extension fileExtension, long algorithmId, String dirAbsolutePath,
+	public SubmitAllFilesSet downloadSubmitAllFilesFromS3(Extension fileExtension, long algorithmId,
+		String dirAbsolutePath,
 		String s3Key) {
 
 		File sourceCodeFile, excuteFile, errorFile, outputFile;
 		List<File> testcases, answers;
-		try  {
+		try {
 			// 절대 경로 지정 및 디렉토리 생성
 			String directoryPath = Files.createDirectories(Paths.get(dirAbsolutePath)).toAbsolutePath() + "/";
 
@@ -95,7 +97,71 @@ public class S3Repository {
 			throw new RuntimeException(e);
 		}
 
-		return AllFilesSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testcases, answers);
+		return SubmitAllFilesSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testcases, answers);
+	}
+
+	public ExecuteAllFileSet downloadExecuteAllFilesFromS3(Extension fileExtension, long algorithmId,
+		String dirAbsolutePath, String s3Key, String testCase) {
+
+		File sourceCodeFile, excuteFile, errorFile, outputFile, testCaseFile;
+		try {
+			// 절대 경로 지정 및 디렉토리 생성
+			String directoryPath = Files.createDirectories(Paths.get(dirAbsolutePath)).toAbsolutePath() + "/";
+
+			// sourceCodeFile 다운로드
+			sourceCodeFile = downloadFileFromS3(directoryPath, s3Key);
+
+			// java 파일이면 Main.java로 이름 변경 필수. - Main class로 받는 걸 기준, class명과 파일명이 같아야 함.
+			if (fileExtension.equals(Extension.JAVA)) {
+				File newSourceCodeFile = new File(directoryPath + "Main.java");
+				sourceCodeFile.renameTo(newSourceCodeFile);
+				sourceCodeFile = newSourceCodeFile;
+			}
+
+			// S3에서 해당 문제의 testcase 파일 List 가져오기
+			testCaseFile = stringToFile(directoryPath, testCase);
+
+			// error 저장할 파일 생성
+			errorFile = getBlankFile(directoryPath, "error.txt");
+
+			// 출력 값 저장할 파일 생성
+			outputFile = getBlankFile(directoryPath, "output.txt");
+
+			// excuteFile 실행 파일 생성
+			if (fileExtension.equals(Extension.CPP)) {
+				excuteFile = getBlankFile(directoryPath, "Main.o");
+			} else if (fileExtension.equals(Extension.JAVA)) {
+				excuteFile = getBlankFile(directoryPath, "Main.class");
+			} else {
+				excuteFile = getBlankFile(directoryPath, "Main.py");
+			}
+
+		} catch (IOException e) {
+			log.error("{}", e.getMessage());
+			throw new RuntimeException(e);
+		}
+
+		return ExecuteAllFileSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testCaseFile);
+	}
+
+	/*
+	 * String을 File로 변환
+	 * @param directoryPath
+	 * @param testCase
+	 * @return File
+	 */
+	private File stringToFile(String directoryPath, String testCase) throws IOException {
+
+		File newFile = new File(directoryPath + "testCase.txt");
+		newFile.createNewFile();
+
+		OutputStream os = new FileOutputStream(newFile);
+		os.write(testCase.getBytes());
+		os.flush();
+		os.close();
+
+		return newFile;
+
 	}
 
 	/*
@@ -160,7 +226,6 @@ public class S3Repository {
 	private File downloadFileFromS3(String directoriesPath, String s3Key) throws
 		SdkClientException,
 		S3Exception, IOException, NullPointerException {
-
 
 		// S3에서 파일이 있는지 확인
 		s3Client.headObject(HeadObjectRequest.builder()
