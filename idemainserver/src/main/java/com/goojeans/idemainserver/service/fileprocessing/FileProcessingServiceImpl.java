@@ -35,12 +35,13 @@ public class FileProcessingServiceImpl implements FileProcessService{
         String awsKeyPath = request.getAlgorithmId() + "/" + request.getUserId() + "/" + request.getSourceCodePath();
         String sourceCode;
         File file = null;
+
         try {
             file = repository.findFile(awsKeyPath);
             log.info("check file={}", file);
             sourceCode = new String(Files.readAllBytes(Paths.get(file.getPath())));
         } catch (Exception e) {
-            throw new RuntimeException("cannot find source code.");
+            return new FileProcessResponse<>(6000, null, e.getMessage());
         } finally {
             file.delete();
             log.info("file exist={}", file.exists());
@@ -60,7 +61,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
             file = repository.findFile(awsKeyPath);
             algorithmText = new String(Files.readAllBytes(Paths.get(file.getPath())));
         } catch (Exception e) {
-            throw new RuntimeException("cannot find algorithm file. check it again");
+            return new FileProcessResponse<>(6000, null, e.getMessage());
         } finally {
             file.delete();
         }
@@ -88,10 +89,8 @@ public class FileProcessingServiceImpl implements FileProcessService{
             uploadFile = getFile(request.getSourceCode());
 
             response = restPost(requestUrl + "/execute", executeRequest, ExecuteResponse.class);
-            String result = repository.saveFile(awsKeyPath, uploadFile);
-            if (result.equals("fail")){
-                throw new RuntimeException();
-            }
+            repository.saveFile(awsKeyPath, uploadFile);
+
         } catch (Exception e) {
             return new FileProcessResponse<>(6000, null, e.getMessage());
         } finally {
@@ -109,7 +108,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
         // not edited and not newly created file
         if (!request.getEdited() && !request.getSourceCode().isEmpty()) {
             RunCode metaData = repository.getMetaData(awsKeyPath);
-            return new FileProcessResponse<>(200, List.of(new SubmitResponse(metaData.getSubmitResult())), "이미 제출된 결과가 있습니다.");
+            return new FileProcessResponse<>(200, List.of(new SubmitResponse(metaData.getSubmitResult())), null);
         }
 
         RestSubmitRequest submitRequest = RestSubmitRequest.builder()
@@ -119,6 +118,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
                 .build();
         FileProcessResponse<SubmitResponse> response;
         File uploadFile = null;
+
         try {
             uploadFile = getFile(request.getSourceCode());
 
@@ -130,12 +130,8 @@ public class FileProcessingServiceImpl implements FileProcessService{
                     .build();
 
             repository.saveMetaData(updateMetaData);
+            repository.saveFile(awsKeyPath, uploadFile);
 
-            String result = repository.saveFile(awsKeyPath, uploadFile);
-
-            if (result.equals("fail")){
-                throw new RuntimeException();
-            }
         } catch (Exception e) {
             log.error(e.getMessage());
             return new FileProcessResponse<>(6000, null, e.getMessage());
@@ -151,10 +147,12 @@ public class FileProcessingServiceImpl implements FileProcessService{
     public FileProcessResponse<MessageResponse> modifyFileStructure(ModifyPathRequest request) {
         String beforeKey = request.getAlgorithmId() + "/" + request.getUserId() + "/" + request.getBeforePath();
         String afterKey = request.getAlgorithmId() + "/" + request.getUserId() + "/" + request.getAfterPath();
+        String message = null;
 
-        String message = repository.modifyFilePath(beforeKey, afterKey);
-        if (message.equals("fail")) {
-            return new FileProcessResponse<>(6000, null, message);
+        try {
+            message = repository.modifyFilePath(beforeKey, afterKey);
+        } catch (Exception e) {
+            return new FileProcessResponse<>(6000, null, e.getMessage());
         }
 
         return new FileProcessResponse<>(200, List.of(new MessageResponse(message)), null);
@@ -163,9 +161,12 @@ public class FileProcessingServiceImpl implements FileProcessService{
     @Override
     public FileProcessResponse<MessageResponse> deleteFile(DeleteFileRequest request) {
         String awsKeyPath = request.getAlgorithmId() + "/" + request.getUserId() + "/" + request.getDeletePathSuffix();
-        String message = repository.deleteFile(awsKeyPath);
-        if (message.equals("fail")) {
-            return new FileProcessResponse<>(6000, null, message);
+        String message = null;
+
+        try{
+            message = repository.deleteFile(awsKeyPath);
+        } catch (Exception e){
+            return new FileProcessResponse<>(6000, null, e.getMessage());
         }
 
         return new FileProcessResponse<>(200, List.of(new MessageResponse(message)), null);

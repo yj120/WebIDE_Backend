@@ -50,6 +50,7 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
 
         } catch (Exception e) {
             log.error(e.getMessage());
+            throw new RuntimeException("something went wrong on finding file");
         }
         return file;
     }
@@ -65,7 +66,7 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
 
         } catch (Exception e) {
             log.error(e.getMessage());
-            return "fail";
+            throw new RuntimeException("something went wrong on saving file");
         }
         return "success";
     }
@@ -82,7 +83,7 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
         } catch (Exception e) {
             // if exception occurs
             log.error(e.getMessage());
-            return "fail";
+            throw new RuntimeException("something went wrong on delete file");
         }
         return "success";
     }
@@ -100,7 +101,7 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
             s3.copyObject(copyRequest);
         } catch (Exception e) {
             log.error(e.getMessage());
-            return "fail";
+            throw new RuntimeException("copy file on s3 fail");
         }
 
         DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
@@ -111,7 +112,7 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
             s3.deleteObject(deleteObjectRequest);
         } catch (Exception e) {
             log.error(e.getMessage());
-            return "fail";
+            throw new RuntimeException("delete file on s3 fail");
         }
         return "success";
     }
