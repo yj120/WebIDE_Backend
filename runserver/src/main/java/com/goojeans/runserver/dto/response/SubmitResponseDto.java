@@ -1,6 +1,7 @@
 package com.goojeans.runserver.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.goojeans.runserver.util.Answer;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -16,16 +17,28 @@ public class SubmitResponseDto {
 	private String result;
 	private String error;
 
+	public static SubmitResponseDto of(Enum<Answer> type, String error) {
+		return new SubmitResponseDto(type.toString() , error);
+	}
+
 	public static SubmitResponseDto ok() {
-		return new SubmitResponseDto("통과했습니다.", null);
+		return new SubmitResponseDto(Answer.CORRECT.getAnswer(), null);
 	}
 
 	public static SubmitResponseDto notOk() {
-		return new SubmitResponseDto("틀렸습니다.", null);
+		return new SubmitResponseDto(Answer.WRONG.getAnswer(), null);
+	}
+
+	public static SubmitResponseDto timeout() {
+		return new SubmitResponseDto(Answer.TIMEOUT.getAnswer(), null);
+	}
+
+	public static SubmitResponseDto serverError() {
+		return new SubmitResponseDto(Answer.SERVER_ERROR.getAnswer(), null);
 	}
 
 	public static SubmitResponseDto userCodeError(String error) {
-		return new SubmitResponseDto("틀렸습니다.", error);
+		return new SubmitResponseDto(Answer.WRONG.getAnswer(), error);
 	}
 
 }
