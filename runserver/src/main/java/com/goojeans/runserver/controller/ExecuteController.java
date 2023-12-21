@@ -1,5 +1,6 @@
 package com.goojeans.runserver.controller;
 
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +26,7 @@ public class ExecuteController {
 	private final ExecuteService executeService;
 
 	@PostMapping
-	public ApiResponse<ExecuteResponseDto> execute(@RequestBody ExecuteRequestDto executeRequestDto) {
+	public ApiResponse<ExecuteResponseDto> execute( @Validated @RequestBody ExecuteRequestDto executeRequestDto) {
 
 		// Error 포함 Response
 		ApiResponse<ExecuteResponseDto> executeResult = executeService.codeJudge(executeRequestDto);
