@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class MessageResponse {
+public class FileTreeResponse {
 
-    private String message;
+    String path;
 }
