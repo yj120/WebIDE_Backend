@@ -1,5 +1,6 @@
 package com.goojeans.idemainserver.repository.fileprocessing;
 
+import com.goojeans.idemainserver.domain.dto.response.FileResponses.FileTreeResponse;
 import com.goojeans.idemainserver.domain.entity.Algorithm;
 import com.goojeans.idemainserver.domain.entity.RunCode;
 import jakarta.persistence.EntityManager;
@@ -16,6 +17,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,6 +31,8 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
 
     @Value("${BUCKET_NAME}")
     private String bucketName;
+
+    //TODO: 파일 형식 정규 표현식 검증
 
     @Override
     public File findFile(String filePath) {
@@ -138,5 +142,23 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
     @Override
     public Optional<Algorithm> findAlgorithmById(Long id) {
         return Optional.ofNullable(em.find(Algorithm.class, id));
+    }
+
+    @Override
+    public List<FileTreeResponse> findFileTrees(String prefix) {
+
+        ListObjectsV2Request request = ListObjectsV2Request.builder()
+                .bucket(bucketName)
+                .prefix(prefix)
+                .build();
+        try {
+            ListObjectsV2Response result = s3.listObjectsV2(request);
+            return result.contents().stream()
+                    .map(S3Object::key)
+                    .map(FileTreeResponse::new)
+                    .toList();
+        } catch (Exception e) {
+            throw new RuntimeException("getting file tree has error");
+        }
     }
 }
