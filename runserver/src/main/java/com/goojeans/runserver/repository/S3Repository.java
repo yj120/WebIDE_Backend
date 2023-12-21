@@ -1,12 +1,10 @@
 package com.goojeans.runserver.repository;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,7 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import com.goojeans.runserver.dto.file.AllFilesSet;
-import com.goojeans.runserver.dto.file.SourceCodeFileSet;
+import com.goojeans.runserver.util.Extension;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +24,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.InvalidObjectStateException;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @Slf4j
@@ -41,144 +38,98 @@ public class S3Repository {
 
 	@Value("${cloud.aws.s3.bucket}")
 	private String bucket;
+	private static final String TESTCASES = "testcases";
+	private static final String ANSWERS = "answers";
 
-	public AllFilesSet downloadAllFilesFromS3(String fileExtension, long algorithmId, String dirAbsolutePath, String s3Key) {
+	/*
+	 * S3에서 파일 다운로드 및 필요한 모든 파일 uuid 명의 폴더 하위에 생성
+	 * @param fileExtension
+	 * @param algorithmId
+	 * @param dirAbsolutePath - 폴더 경로
+	 * @param s3Key
+	 * @return AllFilesSet - File sourceCodeFile, excuteFile, errorFile, outputFile / List<File> testcases, answers;
+	 * @throws IOException, RuntimeException, NullPointerException, SdkClientException, NoSuchKeyException, InvalidObjectStateException, S3Exception, FileNotFoundException,
+	 */
+	public AllFilesSet downloadAllFilesFromS3(Extension fileExtension, long algorithmId, String dirAbsolutePath,
+		String s3Key) {
 
 		File sourceCodeFile, excuteFile, errorFile, outputFile;
 		List<File> testcases, answers;
-
-		try {
+		try  {
 			// 절대 경로 지정 및 디렉토리 생성
-			Path directories = Files.createDirectories(Paths.get(dirAbsolutePath)).toAbsolutePath();
-			// Path directories = Files.createDirectory(directory);
-
-			String directoryPath = directories.toString()+"/";
+			String directoryPath = Files.createDirectories(Paths.get(dirAbsolutePath)).toAbsolutePath() + "/";
 
 			// sourceCodeFile 다운로드
 			sourceCodeFile = downloadFileFromS3(directoryPath, s3Key);
-			if(fileExtension.equals("java")){
+
+			// java 파일이면 Main.java로 이름 변경 필수. - Main class로 받는 걸 기준, class명과 파일명이 같아야 함.
+			if (fileExtension.equals(Extension.JAVA)) {
 				File newSourceCodeFile = new File(directoryPath + "Main.java");
 				sourceCodeFile.renameTo(newSourceCodeFile);
-				sourceCodeFile= newSourceCodeFile;
+				sourceCodeFile = newSourceCodeFile;
 			}
+
 			// S3에서 해당 문제의 testcase 파일 List 가져오기
-			testcases = getFileListFromS3(directoryPath, algorithmId, "testcases");
+			testcases = getFileListFromS3(directoryPath, algorithmId, TESTCASES);
 
 			// S3에서 해당 문제의 answer 파일 List 가져오기
-			answers = getFileListFromS3(directoryPath, algorithmId, "answers");
+			answers = getFileListFromS3(directoryPath, algorithmId, ANSWERS);
 
 			// error 저장할 파일 생성
-			errorFile = new File(directoryPath + "error.txt");
-			errorFile.createNewFile();
-			// 출력 값 저장할 파일 생성
-			outputFile = new File(directoryPath + "output.txt");
-			outputFile.createNewFile();
+			errorFile = getBlankFile(directoryPath, "error.txt");
 
-			// excuteFile 다운로드
-			if (fileExtension.equals("cpp")) {
-				excuteFile = new File(directoryPath + "main.o");
-				excuteFile.createNewFile();
-			} else if (fileExtension.equals("java")) {
-				excuteFile = new File(directoryPath + "Main.class");
-				excuteFile.createNewFile();
+			// 출력 값 저장할 파일 생성
+			outputFile = getBlankFile(directoryPath, "output.txt");
+
+			// excuteFile 실행 파일 생성
+			if (fileExtension.equals(Extension.CPP)) {
+				excuteFile = getBlankFile(directoryPath, "Main.o");
+			} else if (fileExtension.equals(Extension.JAVA)) {
+				excuteFile = getBlankFile(directoryPath, "Main.class");
 			} else {
-				excuteFile = new File(directoryPath + "Main.py");
-				excuteFile.createNewFile();
+				excuteFile = getBlankFile(directoryPath, "Main.py");
 			}
 
-			Collections.sort(testcases);
-			Collections.sort(answers);
-
 		} catch (IOException e) {
+			log.error("{}", e.getMessage());
 			throw new RuntimeException(e);
 		}
 
 		return AllFilesSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testcases, answers);
 	}
 
-	// public SourceCodeFileSet downloadCompileFilesFromS3(long algorithmId, String uuid, String s3Key){
-	//
-	// 	// compileFile 다운로드
-	// 	 File compileFile = downloadFileFromS3(uuid, s3Key);
-	//
-	// 	// 출력 값 저장할 파일 생성
-	// 	File outputFile = new File(uuid + "_output.txt");
-	//
-	// 	// error 저장할 파일 생성
-	// 	File errorFile = new File(uuid + "_error.txt");
-	//
-	// 	 return SourceCodeFileSet.of();
-	// }
-
-	// public ExecuteFileSet downloadFilesFromS3(long algorithmId, String uuid, String s3Key) {
-	//
-	// 	// S3에서 user의 sourcecode 파일 가져오기
-	// 	File sourceCodeFile = downloadFileFromS3(uuid, s3Key);
-	//
-	// 	// S3에서 해당 문제의 testcase 파일 List 가져오기
-	// 	List<File> testcases = getFileListFromS3(uuid, algorithmId, "testcases");
-	//
-	// 	// S3에서 해당 문제의 answer 파일 List 가져오기
-	// 	List<File> answers = getFileListFromS3(uuid, algorithmId, "answers");
-	//
-	// 	// 출력 값 저장할 파일 생성
-	// 	File outputFile = new File(uuid + "_output.txt");
-	//
-	// 	// error 저장할 파일 생성
-	// 	File errorFile = new File(uuid + "_error.txt");
-	//
-	// 	// TODO admin에서 저장할 때 testcase랑 answer랑 개수 똑같은지 다시 한번 확인하고, 여기서도 확인? 아니면 NullPointEx 터짐.
-	//
-	// 	// 순서 맞추기 위해 testcases, answers sort
-	// 	Collections.sort(testcases);
-	// 	Collections.sort(answers);
-	//
-	// 	return ExecuteFileSet.of(sourceCodeFile, testcases, answers, outputFile, errorFile);
-	//
-	// }
-
-	public boolean deleteAllFiles(String fileExtension, AllFilesSet allFilesSet) {
-
-		// 삭제되지 않으면 Error 발생
-		boolean deletedSourceCodeFile = allFilesSet.getSourceCodeFile().delete();
-
-		// python은 excuteFile이 없음.
-		boolean deletedExcuteFile;
-		// if (fileExtension.equals("py")) {
-		// 	deletedExcuteFile = true;
-		// } else {
-		deletedExcuteFile = allFilesSet.getExcuteFile().delete();
-		// }
-		boolean deletedOutputFile = allFilesSet.getOutputFile().delete();
-		boolean deletedErrorFile = allFilesSet.getErrorFile().delete();
-
-		List<File> testcases = allFilesSet.getTestcases();
-		List<File> answers = allFilesSet.getAnswers();
-		boolean isDeletedtestcases = true;
-		boolean isDeletedAnswers = true;
-		for (int i = 0; i < testcases.size(); i++) {
-			isDeletedtestcases = isDeletedtestcases && testcases.get(i).delete();
-			isDeletedAnswers = isDeletedAnswers && answers.get(i).delete();
-		}
-
-		if (deletedSourceCodeFile && deletedExcuteFile && deletedOutputFile
-			&& deletedErrorFile && isDeletedtestcases && isDeletedAnswers) {
-			return true;
-		} else {
-			throw new RuntimeException("Error in deleting files");
-		}
+	/*
+	 * 폴더 내 이름+확장자 별 실제 빈 파일 생성 (createNewFile, outputFile, errorFile, excuteFile)
+	 * @param directoryPath
+	 * @param nameExtension
+	 * @return File
+	 */
+	private static File getBlankFile(String directoryPath, String nameExtension) throws IOException {
+		File newFile = new File(directoryPath + nameExtension);
+		newFile.createNewFile();
+		return newFile;
 	}
 
-	public List<File> getFileListFromS3(String directoriesPath, long algorithmId, String folerName) {
+	/*
+	 * S3에서 파일 List로 가져오기(testcases, answers)
+	 * @param directoriesPath
+	 * @param algorithmId
+	 * @param folerName
+	 * @return List<File>
+	 */
+	public List<File> getFileListFromS3(String directoriesPath, long algorithmId, String folerName) throws IOException {
 
 		String folderNamePath = algorithmId + "/" + folerName;
-		List<File> folderNameList = new ArrayList<>();
+		List<File> fileList = new ArrayList<>();
+
+		// 100개씩 페이징
 		ListObjectsV2Request request = ListObjectsV2Request.builder()
 			.bucket(bucket)
+			.maxKeys(20)
 			.prefix(folderNamePath + "/")
 			.delimiter("/")
 			.build();
-		log.info("folderNamePath : {}", folderNamePath);
+
 		// folerNameList에 folerName 파일들 넣기 - folder 제외
 		ListObjectsV2Response listObjectsV2Response;
 		do {
@@ -186,85 +137,57 @@ public class S3Repository {
 			for (S3Object object : listObjectsV2Response.contents()) {
 				// 객체의 키가 폴더 이름으로 시작하지 않으면 파일로 간주
 				if (!object.key().endsWith("/")) {
-					folderNameList.add(downloadFileFromS3(directoriesPath, object.key()));
+					fileList.add(downloadFileFromS3(directoriesPath, object.key()));
 				}
 			}
 
-			// TODO token? 1000개씩만 가져옴. 확인 필요.
-			// If there are more than maxKeys keys in the bucket, get a continuation token
 			String token = listObjectsV2Response.nextContinuationToken();
 			request = request.toBuilder().continuationToken(token).build();
 		} while (listObjectsV2Response.isTruncated());
 
-		return folderNameList;
+		// 파일 이름 순으로 정렬
+		Collections.sort(fileList);
+
+		return fileList;
 	}
 
-	private File downloadFileFromS3(String directoriesPath, String s3Key) {
+	/*
+	 * S3에서 파일 단건 다운로드
+	 * @param directoriesPath
+	 * @param s3Key
+	 * @return File
+	 */
+	private File downloadFileFromS3(String directoriesPath, String s3Key) throws
+		SdkClientException,
+		S3Exception, IOException, NullPointerException {
 
-		byte[] data = null;
-		try {
 
-			// S3에서 파일이 있는지 확인
-			// TODO 이건 진짜로 throw 던져야 함.
-			// TODO errorResponse<>(); - statusCode만 잘 적으면 됨. -> 메인도 try-catch 다 할 수 없어서.
-			// TODO 모든 오류를 그냥 6000으로 잡아서 프론트에 메시지로만 구분할 수 있도록.
-			// return errorResponse<>();
-			s3Client.headObject(HeadObjectRequest.builder()
-				.bucket(bucket)
-				.key(s3Key)
-				.build());
-			// S3에서 파일 가져와 내용 Byte로 저장
-			GetObjectRequest objectRequest = GetObjectRequest
-				.builder()
-				.key(s3Key)
-				.bucket(bucket)
-				.build();
+		// S3에서 파일이 있는지 확인
+		s3Client.headObject(HeadObjectRequest.builder()
+			.bucket(bucket)
+			.key(s3Key)
+			.build());
+		// S3에서 파일 가져와 내용 Byte로 저장
+		GetObjectRequest objectRequest = GetObjectRequest
+			.builder()
+			.key(s3Key)
+			.bucket(bucket)
+			.build();
 
-			// TODO try-catch 확인
-			// 메서드를 들어가서 throw를 확인해야 함.
-			ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(objectRequest);
-			data = objectBytes.asByteArray();
+		ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(objectRequest);
+		byte[] data = objectBytes.asByteArray();
 
-		} catch (NoSuchKeyException e) {
-			log.error("NoSuchKeyException - Error in downloading file from S3");
-			log.error(e.awsErrorDetails().errorMessage());
-			throw new RuntimeException(e);
-		} catch (InvalidObjectStateException e) {
-			log.error("InvalidObjectStateException - Error in downloading file from S3");
-			log.error(e.awsErrorDetails().errorMessage());
-			throw new RuntimeException(e);
-		} catch (SdkClientException e) {
-			log.error(e.getMessage());
-			throw new RuntimeException(e);
-		} finally {
-
-			//TODO 사용하고 전부 닫아줘야 하나?-
-			// s3Client.close();
-		}
-
-		// 파일 경로 지정 - UUID + 파일 이름, (millisecond도 가능.)
+		// 경로에 파일 생성
 		String[] split = s3Key.split("/");
-		String downloadPathFile = directoriesPath + "_" + split[split.length - 1];
+		String downloadPathFile = directoriesPath + split[split.length - 1];
 		File file = new File(downloadPathFile);
 
-		OutputStream os; // AutoClosable	구현
-		try {
-			os = new FileOutputStream(file);
-			os.write(data);
-		} catch (FileNotFoundException e) {
-			// FileOutputStream 생성
-			log.error(e.getMessage());
-			log.error("FileNotFoundException - Error in creating download Path file");
-			// throw new RuntimeException(e);
-		} catch (IOException e) {
-			// o.write(data), close 에러
-			log.error(e.getMessage());
-			log.error("o.write(data), close error");
-			// throw new RuntimeException(e);
-		} catch (NullPointerException e) {
-			// TODO 틀렸습니다가 아니라 없다고 나와야 함.
-			log.error(e.getMessage());
-		}
+		// 생성한 파일에 내용 쓰기, 내용을 쓰면 자동으로 실제 생성됨.
+		// try-with-resources 대신 close() 사용
+		OutputStream os = new FileOutputStream(file);
+		os.write(data);
+		os.flush();
+		os.close();
 
 		return file;
 
