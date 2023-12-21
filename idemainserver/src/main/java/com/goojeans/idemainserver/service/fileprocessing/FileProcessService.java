@@ -13,7 +13,11 @@ public interface FileProcessService {
 
     public FileProcessResponse<SubmitResponse> submitAndSaveCode(SubmitRequest request);
 
-    public FileProcessResponse<MessageResponse> modifyFileStructure(ModifyPathRequest request);
+    public FileProcessResponse<FileTreeResponse> modifyFileStructure(ModifyPathRequest request);
 
-    public FileProcessResponse<MessageResponse> deleteFile(DeleteFileRequest request);
+    public FileProcessResponse<FileTreeResponse> deleteFile(DeleteFileRequest request);
+
+    public FileProcessResponse<FileTreeResponse> findFileTree(FileTreeRequest request);
+
+    public FileProcessResponse<FileTreeResponse> createFileOrFolder(CreateFileRequest request);
 }

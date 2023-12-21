@@ -144,32 +144,85 @@ public class FileProcessingServiceImpl implements FileProcessService{
 
 
     @Override
-    public FileProcessResponse<MessageResponse> modifyFileStructure(ModifyPathRequest request) {
+    public FileProcessResponse<FileTreeResponse> modifyFileStructure(ModifyPathRequest request) {
         String beforeKey = request.getAlgorithmId() + "/" + request.getUserId() + "/" + request.getBeforePath();
         String afterKey = request.getAlgorithmId() + "/" + request.getUserId() + "/" + request.getAfterPath();
+        String prefix = request.getAlgorithmId() + "/" + request.getUserId();
         String message = null;
 
         try {
             message = repository.modifyFilePath(beforeKey, afterKey);
+            if (message.equals("fail")) {
+                throw new RuntimeException("cannot modify file");
+            }
+            List<FileTreeResponse> fileTrees = repository.findFileTrees(prefix);
+            return new FileProcessResponse<>(200, fileTrees, null);
         } catch (Exception e) {
+            log.error(e.getMessage());
             return new FileProcessResponse<>(6000, null, e.getMessage());
         }
-
-        return new FileProcessResponse<>(200, List.of(new MessageResponse(message)), null);
     }
 
     @Override
-    public FileProcessResponse<MessageResponse> deleteFile(DeleteFileRequest request) {
+    public FileProcessResponse<FileTreeResponse> deleteFile(DeleteFileRequest request) {
         String awsKeyPath = request.getAlgorithmId() + "/" + request.getUserId() + "/" + request.getDeletePathSuffix();
+        String prefix = request.getAlgorithmId() + "/" + request.getUserId();
         String message = null;
 
         try{
             message = repository.deleteFile(awsKeyPath);
+
+            if (message.equals("fail")) {
+                throw new RuntimeException("cannot modify file");
+            }
+
+            List<FileTreeResponse> fileTrees = repository.findFileTrees(prefix);
+
+            return new FileProcessResponse<>(200, fileTrees, null);
         } catch (Exception e){
+            log.error(e.getMessage());
             return new FileProcessResponse<>(6000, null, e.getMessage());
         }
 
-        return new FileProcessResponse<>(200, List.of(new MessageResponse(message)), null);
+    }
+
+    @Override
+    public FileProcessResponse<FileTreeResponse> findFileTree(FileTreeRequest request) {
+        String prefix = request.getAlgorithmId() + "/" + request.getUserId();
+        try {
+            List<FileTreeResponse> fileTrees = repository.findFileTrees(prefix);
+            return new FileProcessResponse<>(200, fileTrees, null);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return new FileProcessResponse<>(6000, null, e.getMessage());
+        }
+    }
+
+    // create new file or folder
+    @Override
+    public FileProcessResponse<FileTreeResponse> createFileOrFolder(CreateFileRequest request) {
+        String filePath = request.getAlgorithmId() + "/" + request.getUserId() + "/" + request.getCreatePath();
+        String prefix = request.getAlgorithmId() + "/" + request.getUserId();
+        String tempFilePath = "temp_" + UUID.randomUUID();
+        File file = null;
+
+        try {
+            file = new File(tempFilePath);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            repository.saveFile(filePath, file);
+
+            List<FileTreeResponse> fileTrees = repository.findFileTrees(prefix);
+            log.info("check filetrees={}", fileTrees.get(0));
+            return new FileProcessResponse<>(200, fileTrees, null);
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return new FileProcessResponse<>(6000, null, e.getMessage());
+        } finally {
+            file.delete();
+        }
     }
 
 
