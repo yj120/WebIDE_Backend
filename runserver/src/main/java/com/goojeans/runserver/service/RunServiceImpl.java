@@ -141,9 +141,9 @@ public class RunServiceImpl implements RunService {
 
 			if (process.isAlive()) {
 				process.destroyForcibly();
-				log.error("컴파일 시간초과.");
+				log.error(" 시간초과.");
 			} else {
-				log.error("컴파일 시간초과.");
+				log.error(" 시간초과.");
 			}
 		}
 		return isTimeOut;

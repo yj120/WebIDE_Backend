@@ -125,6 +125,17 @@ public class ExecuteService {
 
 		// 프로세스 실행
 		Process process = processBuilder.start();
+
+		// 시간 초과 시 종료
+		boolean timeOut = runService.isTimeOut(process, 2);
+		if (!timeOut) {
+			// TODO 시간 초과 시, process 종료
+			writer.write("시간 초과");
+			writer.flush();
+			writer.close();
+			return runService.fileToString(outputFile);
+		}
+
 		// TODO PYTHON3 timout4 java에서 OutOfMemoryError 발생.
 		// 표준 출력 스트림 (표준 오류 포함) 읽기
 		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -135,8 +146,7 @@ public class ExecuteService {
 		writer.write(stringBuilder.toString());
 		writer.flush();
 
-		// 시간 초과 시 종료
-		runService.isTimeOut(process, 10);
+
 
 
 		return runService.fileToString(outputFile);
