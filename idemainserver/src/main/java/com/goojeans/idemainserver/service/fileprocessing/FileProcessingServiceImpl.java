@@ -89,6 +89,11 @@ public class FileProcessingServiceImpl implements FileProcessService{
             uploadFile = getFile(request.getSourceCode());
 
             response = restPost(requestUrl + "/execute", executeRequest, ExecuteResponse.class);
+
+            if (response.getStatus() != 200) {
+                throw new RuntimeException("run server error occurs");
+            }
+
             repository.saveFile(awsKeyPath, uploadFile);
 
         } catch (Exception e) {
@@ -107,7 +112,10 @@ public class FileProcessingServiceImpl implements FileProcessService{
 
         // not edited and not newly created file
         if (!request.getEdited() && !request.getSourceCode().isEmpty()) {
-            RunCode metaData = repository.getMetaData(awsKeyPath);
+            RunCode metaData = repository.getMetaData(awsKeyPath).stream()
+                    .findAny()
+                    .orElseThrow();
+
             return new FileProcessResponse<>(200, List.of(new SubmitResponse(metaData.getSubmitResult())), null);
         }
 
@@ -123,6 +131,10 @@ public class FileProcessingServiceImpl implements FileProcessService{
             uploadFile = getFile(request.getSourceCode());
 
             response = restPost(requestUrl + "/submit", submitRequest, SubmitResponse.class);
+
+            if (response.getStatus() != 200) {
+                throw new RuntimeException("run server error occurs");
+            }
 
             RunCode updateMetaData = RunCode.builder()
                     .submitResult(response.getData().get(0).getResult())
