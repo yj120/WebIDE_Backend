@@ -20,7 +20,7 @@ public interface FileProcessRepository {
 
     public RunCode saveMetaData(RunCode runCode);
 
-    public RunCode getMetaData(String filePath);
+    public Optional<RunCode> getMetaData(String filePath);
 
     public Optional<Algorithm> findAlgorithmById(Long id);
 

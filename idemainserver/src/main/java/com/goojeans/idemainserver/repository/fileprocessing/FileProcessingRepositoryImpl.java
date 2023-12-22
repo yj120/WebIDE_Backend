@@ -131,12 +131,13 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
 
         findCode.setSourceUrl(runCode.getSourceUrl());
         findCode.setSubmitResult(runCode.getSubmitResult());
+
         return findCode;
     }
 
     @Override
-    public RunCode getMetaData(String filePath) {
-        return em.find(RunCode.class, filePath);
+    public Optional<RunCode> getMetaData(String filePath) {
+        return Optional.ofNullable(em.find(RunCode.class, filePath));
     }
 
     @Override

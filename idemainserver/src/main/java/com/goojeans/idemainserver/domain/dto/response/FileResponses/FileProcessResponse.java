@@ -14,7 +14,9 @@ import java.util.List;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class FileProcessResponse<T> {
-    private int statusCode;
+
+    private Integer status;
     private List<T> data;
-    private String message;
+    private String error;
+
 }
