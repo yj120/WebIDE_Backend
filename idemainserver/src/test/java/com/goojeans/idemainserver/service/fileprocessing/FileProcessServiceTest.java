@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -128,7 +129,7 @@ class FileProcessServiceTest {
         doReturn(testFile).when(service).getFile(content);
 
         FileProcessResponse<ExecuteResponse> mock = new FileProcessResponse<>();
-        mock.setStatusCode(200);
+        mock.setStatus(200);
         mock.setData(List.of(new ExecuteResponse(testResult)));
 
         RestExecuteRequest restRequest = RestExecuteRequest.builder()
@@ -179,7 +180,7 @@ class FileProcessServiceTest {
                 .build();
 
         FileProcessResponse<SubmitResponse> mock = new FileProcessResponse<>();
-        mock.setStatusCode(200);
+        mock.setStatus(200);
         mock.setData(List.of(new SubmitResponse(SubmitResult.CORRECT)));
 
         doReturn(testFile).when(service).getFile(content);
@@ -223,7 +224,7 @@ class FileProcessServiceTest {
                 .build();
 
         SubmitResponse response = new SubmitResponse(SubmitResult.CORRECT);
-        when(repository.getMetaData(fileKey)).thenReturn(runCode);
+        when(repository.getMetaData(fileKey)).thenReturn(Optional.ofNullable(runCode));
 
         //When
         FileProcessResponse<SubmitResponse> serviceResponse = service.submitAndSaveCode(request);

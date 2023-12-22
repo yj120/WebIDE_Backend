@@ -265,7 +265,7 @@ class FileProcessRepositoryTest {
         em.persist(runCode);
 
         //When
-        RunCode metaData = repository.getMetaData(filePath);
+        RunCode metaData = repository.getMetaData(filePath).orElseThrow();
 
         //Then
         assertThat(metaData).isEqualTo(runCode);
