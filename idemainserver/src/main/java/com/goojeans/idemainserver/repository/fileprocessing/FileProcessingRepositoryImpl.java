@@ -78,12 +78,19 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
     @Override
     public String deleteFile(String filePath) {
         // create delete object request
-        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+        ListObjectsV2Request listObjectsReq = ListObjectsV2Request.builder()
                 .bucket(bucketName)
-                .key(filePath)
+                .prefix(filePath)
                 .build();
-        try {
-            s3.deleteObject(deleteObjectRequest);
+        try{
+            ListObjectsV2Response listObjectsRes = s3.listObjectsV2(listObjectsReq);
+            for(S3Object object : listObjectsRes.contents()) {
+                DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(object.key())
+                        .build();
+                s3.deleteObject(deleteObjectRequest);
+            }
         } catch (Exception e) {
             // if exception occurs
             log.error(e.getMessage());
