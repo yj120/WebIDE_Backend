@@ -30,12 +30,8 @@ public class FileProcessingController {
         return service.findAlgoText(algorithmId);
     }
 
-    //TODO: get all file trees
-/*    @GetMapping("/filetrees/{algorithmId}")
-    public */
-
     @PostMapping("/delete")
-    public FileProcessResponse<MessageResponse> deleteFile(@Validated @RequestBody DeleteFileRequest deleteRequest) {
+    public FileProcessResponse<FileTreeResponse> deleteFile(@Validated @RequestBody DeleteFileRequest deleteRequest) {
         //TODO: get userId from jwt token
         Long tempUserId = 1L;
         deleteRequest.setUserId(tempUserId);
@@ -44,7 +40,7 @@ public class FileProcessingController {
     }
 
     @PatchMapping("/modification")
-    public FileProcessResponse<MessageResponse> modifyFilePath(@Validated @RequestBody ModifyPathRequest modifyRequest) {
+    public FileProcessResponse<FileTreeResponse> modifyFilePath(@Validated @RequestBody ModifyPathRequest modifyRequest) {
         //TODO: get userId from jwt token
         Long tempUserId = 1L;
         modifyRequest.setUserId(tempUserId);
@@ -69,4 +65,24 @@ public class FileProcessingController {
 
         return service.submitAndSaveCode(submitRequest);
     }
+
+    @GetMapping("/filetrees/{algorithmId}")
+    public FileProcessResponse<FileTreeResponse> getAllFileTree(@PathVariable Long algorithmId) {
+        //TODO: get userId from jwt token
+        Long tempUserId = 1L;
+
+        return service.findFileTree(new FileTreeRequest(algorithmId, tempUserId));
+    }
+
+
+    @PostMapping("/filecreate")
+    public FileProcessResponse<FileTreeResponse> createFileFolder(@Validated @RequestBody CreateFileRequest request) {
+        //TODO: get userId from jwt token
+        Long tempUserId = 1L;
+
+        request.setUserId(tempUserId);
+
+        return service.createFileOrFolder(request);
+    }
+
 }
