@@ -34,6 +34,7 @@ public class FileProcessingController {
     public FileProcessResponse<FileTreeResponse> deleteFile(@Validated @RequestBody DeleteFileRequest deleteRequest) {
         //TODO: get userId from jwt token
         Long tempUserId = 1L;
+
         deleteRequest.setUserId(tempUserId);
 
         return service.deleteFile(deleteRequest);
@@ -43,6 +44,7 @@ public class FileProcessingController {
     public FileProcessResponse<FileTreeResponse> modifyFilePath(@Validated @RequestBody ModifyPathRequest modifyRequest) {
         //TODO: get userId from jwt token
         Long tempUserId = 1L;
+
         modifyRequest.setUserId(tempUserId);
 
         return service.modifyFileStructure(modifyRequest);
@@ -78,6 +80,23 @@ public class FileProcessingController {
     @PostMapping("/filecreate")
     public FileProcessResponse<FileTreeResponse> createFileFolder(@Validated @RequestBody CreateFileRequest request) {
         //TODO: get userId from jwt token
+        /**
+        // JwtService 의존성 주입 필요
+        // 파라미터에 "HttpServletRequest request"  추가 필요
+
+        // 헤더에 담긴 토큰 추출
+        Optional<String> jwttoken = jwtService.extractAccessToken(request);
+        String token = jwttoken.orElse("not valid value");
+        // 토큰 복호화
+        Map<String, String> decode = jwtService.decode(token);
+        // 닉네임
+        String nickname = decode.get("nickname");
+        // id
+        String id = decode.get("id");
+
+        log.info("======> nickname={},id={}",nickname,id);
+         **/
+
         Long tempUserId = 1L;
 
         request.setUserId(tempUserId);
