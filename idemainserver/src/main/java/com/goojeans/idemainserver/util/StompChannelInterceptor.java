@@ -1,5 +1,6 @@
 package com.goojeans.idemainserver.util;
 
+import com.goojeans.idemainserver.util.TokenAndLogin.jwt.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class StompChannelInterceptor implements ChannelInterceptor {
 
     private final UserSessionRegistry userSessionRegistry;
+    private final JwtService jwtService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -29,11 +31,10 @@ public class StompChannelInterceptor implements ChannelInterceptor {
 
             String authorization = String.valueOf(accessor.getNativeHeader("Authorization"));
 
-            // 토큰 복호화 후 닉네임 추출
-//            Map<String, String> decode = jwtService.decode(authorization);
-//            String nickname = decode.get("nickname");
+            //토큰 복호화 후 닉네임 추출
+            Map<String, String> decode = jwtService.decode(authorization);
+            String nickname = decode.get("nickname");
 
-            String nickname = accessor.getFirstNativeHeader("nickname");
             log.info("sessionId={}, nickname={}", sessionId, nickname);
 
             userSessionRegistry.register(sessionId, nickname);
