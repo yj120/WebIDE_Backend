@@ -24,6 +24,7 @@ services:
       NAVER_SECRET: ${NAVER_SECRET}
       KAKAO_ID: ${KAKAO_ID}
       KAKAO_SECRET: ${KAKAO_SECRET}
+      BUCKET_NAME: ${BUCKET_NAME}
 
   runserver:
     build:
