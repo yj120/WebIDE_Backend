@@ -44,7 +44,6 @@ public class FileProcessingServiceImpl implements FileProcessService{
             return new FileProcessResponse<>(6000, null, e.getMessage());
         } finally {
             file.delete();
-            log.info("file exist={}", file.exists());
         }
         SourceCodeResponse data = new SourceCodeResponse(sourceCode);
 
@@ -91,7 +90,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
             response = restPost(requestUrl + "/execute", executeRequest, ExecuteResponse.class);
 
             if (response.getStatus() != 200) {
-                throw new RuntimeException("run server error occurs");
+                throw new RuntimeException(response.getError());
             }
 
             repository.saveFile(awsKeyPath, uploadFile);
@@ -133,8 +132,11 @@ public class FileProcessingServiceImpl implements FileProcessService{
             response = restPost(requestUrl + "/submit", submitRequest, SubmitResponse.class);
 
             if (response.getStatus() != 200) {
-                throw new RuntimeException("run server error occurs");
+                throw new RuntimeException(response.getError());
             }
+
+            //TODO: add member_solved feature for submit
+
 
             RunCode updateMetaData = RunCode.builder()
                     .submitResult(response.getData().get(0).getResult())
@@ -226,7 +228,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
             repository.saveFile(filePath, file);
 
             List<FileTreeResponse> fileTrees = repository.findFileTrees(prefix);
-            log.info("check filetrees={}", fileTrees.get(0));
+
             return new FileProcessResponse<>(200, fileTrees, null);
 
         } catch (Exception e) {
