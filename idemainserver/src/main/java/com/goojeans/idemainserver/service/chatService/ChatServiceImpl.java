@@ -2,9 +2,9 @@ package com.goojeans.idemainserver.service.chatService;
 
 import com.goojeans.idemainserver.domain.dto.response.chatResponse.ChatResponse;
 import com.goojeans.idemainserver.domain.dto.response.chatResponse.StompResponse;
-import com.goojeans.idemainserver.domain.entity.chatEntity.Algorithm;
+import com.goojeans.idemainserver.domain.entity.Algorithm;
 import com.goojeans.idemainserver.domain.entity.chatEntity.Chat;
-import com.goojeans.idemainserver.repository.chatRepository.AlgorithmRepository;
+import com.goojeans.idemainserver.repository.algorithm.AlgorithmRepository;
 import com.goojeans.idemainserver.repository.chatRepository.ChatRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

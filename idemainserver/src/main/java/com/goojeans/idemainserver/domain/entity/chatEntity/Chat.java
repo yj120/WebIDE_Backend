@@ -1,5 +1,6 @@
 package com.goojeans.idemainserver.domain.entity.chatEntity;
 
+import com.goojeans.idemainserver.domain.entity.Algorithm;
 import com.goojeans.idemainserver.domain.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
