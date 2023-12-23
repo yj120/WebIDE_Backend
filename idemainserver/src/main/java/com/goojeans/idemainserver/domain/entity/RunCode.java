@@ -15,12 +15,10 @@ import lombok.*;
 public class RunCode extends BaseEntity{
 
     @Id
-    @Column(name = "SOURCE_URL")
     private String sourceUrl;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "SUBMIT_RESULT")
     private SubmitResult submitResult;
 
 }

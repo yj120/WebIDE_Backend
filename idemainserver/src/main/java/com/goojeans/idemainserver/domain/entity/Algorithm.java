@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Getter @Setter
 @Builder
@@ -12,17 +14,16 @@ import lombok.*;
 public class Algorithm extends BaseEntity{
 
     @Id @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "ALGORITHM_ID")
     private Long algorithmId;
 
     @NotNull
-    @Column(name = "ALGORITHM_NAME")
     private String algorithmName;
 
-    @Column(name = "TAG")
     private String tag;
 
-    @Column(name = "LEVEL")
     private int level;
+
+    @OneToMany(mappedBy = "algorithmId", orphanRemoval = true, cascade = CascadeType.ALL)
+    List<MemberSolved> memberSolves;
 
 }

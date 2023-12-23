@@ -1,5 +1,6 @@
 package com.goojeans.idemainserver.domain.entity;
 
+import com.goojeans.idemainserver.domain.entity.Users.User;
 import com.goojeans.idemainserver.util.Language;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -17,14 +18,14 @@ public class MemberSolved extends BaseEntity{
     private Long id;
 
     @NotNull
-    @Column(name = "SOLVED")
     private boolean solved;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "ALGORITHM_ID")
-    private Algorithm algorithmId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "algorithm_id")
+    private Algorithm algorithm;
 
-    //TODO: add user_id
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
 }
