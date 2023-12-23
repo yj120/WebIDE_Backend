@@ -38,7 +38,6 @@ public class UserController {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final LoginService loginService;
-    private final ApiResponse apiResponse;
 
 
 
@@ -166,10 +165,9 @@ public class UserController {
 
     // 마이페이지 블로그, 주소 수정
     @PostMapping("/mypage/edit/blogAndcity")
-    public ResponseDto<String> updateBlogAndCity(@RequestParam String blog,
+    public ResponseDto<ResponsDataDto> updateBlogAndCity(@RequestParam String blog,
                                           @RequestParam String city,
                                           HttpServletRequest request){
-        ResponseDto<String> responseDto = new ResponseDto<>();
         Optional<String> extracted = jwtService.extractAccessToken(request);
         if(extracted.isPresent()){
             String token = extracted.get();
@@ -177,17 +175,12 @@ public class UserController {
             String email = extractEmail.get();
             //update
             userService.updateUserBlogAndAddress(email,blog,city);
-            responseDto.setStatusCode(ErrorCode.OK.getStatus());
-            List<String> data = new ArrayList<>();
-            data.add("ok");
-            responseDto.setData(data);
+
+            ApiResponse apiResponse = new ApiResponse();
+            ResponseDto<ResponsDataDto> responseDto = apiResponse.ok(ErrorCode.OK.getStatus(), "저장완료");
             return responseDto;
         }
-        responseDto.setStatusCode(ErrorCode.NOT_FOUND.getStatus());
-        List<String> data = new ArrayList<>();
-        data.add("NOT EXIST USER");
-        responseDto.setData(data);
-        return responseDto;
+        return new ApiResponse().fail(ErrorCode.EDIT_FAIL.getStatus(), "저장실패");
     }
 
 

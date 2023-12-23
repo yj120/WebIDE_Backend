@@ -3,12 +3,15 @@ package com.goojeans.idemainserver.service;
 import com.goojeans.idemainserver.domain.dto.request.TokenAndLogin.PasswordDto;
 import com.goojeans.idemainserver.domain.dto.request.TokenAndLogin.UserSignUpDto;
 import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.OAuthUserInfoDto;
+import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.ResponseDto;
 import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.UserInfoDto;
 import com.goojeans.idemainserver.domain.entity.Users.User;
 import com.goojeans.idemainserver.domain.entity.Users.UserImage;
 import com.goojeans.idemainserver.repository.Users.UserImageRepository;
 import com.goojeans.idemainserver.repository.Users.UserRepository;
 import com.goojeans.idemainserver.util.TokenAndLogin.ApiException;
+import com.goojeans.idemainserver.util.TokenAndLogin.ApiResponse;
+import com.goojeans.idemainserver.util.TokenAndLogin.ErrorCode;
 import com.goojeans.idemainserver.util.TokenAndLogin.Role;
 import com.goojeans.idemainserver.util.TokenAndLogin.jwt.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,28 +67,33 @@ public class UserService {
 
     // header request 로 userInfoDto 생성
     public UserInfoDto getUserInfo(HttpServletRequest request){
-
-        UserInfoDto userInfoDto = new UserInfoDto();
         Optional<String> s = jwtService.extractAccessToken(request);
         String Token = s.orElse("not valid value");
-
         Optional<String> emailFromToken = jwtService.extractEmail(Token);
+
         if(emailFromToken.isPresent()){
             String e = emailFromToken.get().toString();
             Optional<User> user = userRepository.findByEmail(e);
-            if(user.isPresent()){
+            if(user.isPresent()){ // 토큰으로 유저를 찾음
                 User u = user.get();
-                userInfoDto.setEmail(u.getEmail());
-                userInfoDto.setNickname(u.getNickname());
-                userInfoDto.setImageUrl(u.getImageUrl());
-                userInfoDto.setBio(u.getBio());
-                userInfoDto.setCity(u.getCity());
-                userInfoDto.setIsAdmin(u.getIsAdmin());
-                userInfoDto.setSocialId(u.getSocialId());
-                userInfoDto.setAccessToken(Token);
+                UserInfoDto userInfoDto = UserInfoDto.builder()
+                        .email(u.getEmail())
+                        .nickname(u.getNickname())
+                        .imageUrl(u.getImageUrl())
+                        .Bio(u.getBio())
+                        .city(u.getCity())
+                        .isAdmin(u.getIsAdmin())
+                        .socialId(u.getSocialId())
+                        .AccessToken(Token)
+                        .build();
+                return userInfoDto;
             }
+        }else{
+            // 토큰으로 유저를 찾을 수 없음 (==유효하지 않은 토큰)
+            throw new ApiException(NOT_FOUND,"토큰으로 유저 찾을 수 없음");
         }
-        return userInfoDto;
+
+        return null;
     }
 
 
