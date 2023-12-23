@@ -45,6 +45,9 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
     List<MemberSolved> memberSolves;
 
+    @OneToOne(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
+    UserImage userImage;
+
     // 유저 권한 설정 메소드
     public void authorizeUser() {
         this.IsAdmin = Role.USER ;
