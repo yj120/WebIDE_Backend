@@ -2,13 +2,11 @@ package com.goojeans.idemainserver.domain.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter @Setter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class Algorithm extends BaseEntity{
@@ -21,13 +19,10 @@ public class Algorithm extends BaseEntity{
     @Column(name = "ALGORITHM_NAME")
     private String algorithmName;
 
-    @NotNull
-    @Column(name = "ALGORITHM_URL")
-    private String algorithmUrl;
-
     @Column(name = "TAG")
     private String tag;
 
+    @Column(name = "LEVEL")
     private int level;
 
 }
