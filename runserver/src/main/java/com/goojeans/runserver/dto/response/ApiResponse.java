@@ -16,11 +16,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ApiResponse<T> {
 
-	private int statusCode;
+	private int status;
 
 	private List<T> data = new ArrayList<>();
 
-	private String message; // “오류 있다면 출력”
+	private String error; // “오류 있다면 출력”
 
 	public static ApiResponse<SubmitResponseDto> submitOkFrom(Enum answer) {
 		List<SubmitResponseDto> datas = new ArrayList<>();
