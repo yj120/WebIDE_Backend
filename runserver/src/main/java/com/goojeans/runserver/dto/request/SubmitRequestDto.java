@@ -2,6 +2,7 @@ package com.goojeans.runserver.dto.request;
 
 import com.goojeans.runserver.util.Extension;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,8 +13,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SubmitRequestDto {
 
+	@NotNull
 	String s3Key;
+
+	@NotNull
 	long algorithmId;
+
+	@NotNull
 	Extension fileExtension;
 
 	public static SubmitRequestDto from(String s3Key, long algorithmId, Extension fileExtension) {
