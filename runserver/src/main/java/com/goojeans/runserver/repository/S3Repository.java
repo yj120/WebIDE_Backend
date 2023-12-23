@@ -100,11 +100,12 @@ public class S3Repository {
 		return SubmitAllFilesSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testcases, answers);
 	}
 
-	public ExecuteAllFileSet downloadExecuteAllFilesFromS3(Extension fileExtension, long algorithmId,
+	public ExecuteAllFileSet downloadExecuteAllFilesFromS3(Extension fileExtension,
 		String dirAbsolutePath, String s3Key, String testCase) {
 
 		File sourceCodeFile, excuteFile, errorFile, outputFile, testCaseFile;
 		try {
+
 			// 절대 경로 지정 및 디렉토리 생성
 			String directoryPath = Files.createDirectories(Paths.get(dirAbsolutePath)).toAbsolutePath() + "/";
 

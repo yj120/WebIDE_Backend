@@ -75,15 +75,7 @@ public interface RunService {
 	 */
 	ProcessBuilder getProcessBuilder(Extension fileExtension, String sourceCodeFilePath, String executePath);
 
-	/*
-	 * 정답 확인
-	 * @param fileExtension
-	 * @param executeFileSet
-	 * @return ApiResponse<SubmitResponseDto>
-	 * @throws IOException, InterruptedException
-	 */
-	ApiResponse<SubmitResponseDto> checkTheAnswer(Extension fileExtension, SubmitExecuteFileSet submitExecuteFileSet) throws
-		IOException, InterruptedException;
+
 
 	/*
 	 * 각 언어 별 cmd 얻기
@@ -91,25 +83,6 @@ public interface RunService {
 	 * @param executeFileSet
 	 */
 	String[] getCmd(Extension fileExtension, String executeFilePath);
-
-	/*
-	 * 각 testCase와 answer를 비교해 정답 여부 확인하기
-	 * 정답 확인 - correct, wrong, timeout, (+runtime, compile error)
-	 * @param executeFileSet
-	 * @param command
-	 * @return Answer
-	 */
-	Answer isCorrect(SubmitExecuteFileSet submitExecuteFileSet, String... command) throws IOException, InterruptedException;
-
-	/*
-	 * 정답과 출력 파일 비교하기
-	 * @param outputFile
-	 * @param answer
-	 * @return boolean - 정답 여부
-	 * @throws IOException
-	 *
-	 */
-	boolean compareToAnswer(File outputFile, File answer) throws IOException;
 
 	/*
 	 * file을 String으로 변환
