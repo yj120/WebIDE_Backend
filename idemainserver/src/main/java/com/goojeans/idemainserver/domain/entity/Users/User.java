@@ -1,13 +1,14 @@
 package com.goojeans.idemainserver.domain.entity.Users;
 
 import com.goojeans.idemainserver.domain.entity.BaseEntity;
+import com.goojeans.idemainserver.domain.entity.MemberSolved;
 import com.goojeans.idemainserver.util.TokenAndLogin.Role;
 import com.goojeans.idemainserver.util.TokenAndLogin.SocialType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-
+import java.util.List;
 
 
 @Getter
@@ -40,6 +41,9 @@ public class User extends BaseEntity {
     private String socialId; // 로그인한 소셜 타입의 식별자 값 (일반 로그인인 경우 null)
 
     private String refreshToken; // 리프레시 토큰
+
+    @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
+    List<MemberSolved> memberSolves;
 
     // 유저 권한 설정 메소드
     public void authorizeUser() {

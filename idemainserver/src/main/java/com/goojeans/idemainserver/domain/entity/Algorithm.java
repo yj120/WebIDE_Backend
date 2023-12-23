@@ -14,6 +14,7 @@ import java.util.List;
 public class Algorithm extends BaseEntity{
 
     @Id @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "algorithm_id")
     private Long algorithmId;
 
     @NotNull
@@ -23,7 +24,7 @@ public class Algorithm extends BaseEntity{
 
     private int level;
 
-    @OneToMany(mappedBy = "algorithmId", orphanRemoval = true, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "algorithm", orphanRemoval = true, cascade = CascadeType.ALL)
     List<MemberSolved> memberSolves;
 
 }
