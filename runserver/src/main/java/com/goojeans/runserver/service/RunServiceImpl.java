@@ -133,7 +133,6 @@ public class RunServiceImpl implements RunService {
 
 	public String fileToString(File fileName) {
 
-
 		StringBuilder stringBuilder = new StringBuilder();
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(fileName));

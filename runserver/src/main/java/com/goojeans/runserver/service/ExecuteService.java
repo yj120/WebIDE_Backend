@@ -88,10 +88,8 @@ public class ExecuteService {
 			return ApiResponse.executeServerErrorFrom(e.getMessage());
 		} finally {
 
-
 			// 모두 지워지지 않았다면, 서버 에러 메시지 출력
 			if (!runService.deleteFolder(folder)) {
-
 				log.error("모든 File 지우기 실패");
 				return ApiResponse.executeServerErrorFrom("모든 File 지우기 실패");
 			}
@@ -119,9 +117,8 @@ public class ExecuteService {
 		Process process = processBuilder.start();
 
 		// 시간 초과 시 종료
-		boolean timeOut = runService.isTimeOut(process, 2);
+		boolean timeOut = runService.isTimeOut(process, 10);
 		if (!timeOut) {
-			// TODO 시간 초과 시, process 종료
 			writer.write("시간 초과");
 			writer.flush();
 			writer.close();

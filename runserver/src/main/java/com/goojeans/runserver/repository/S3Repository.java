@@ -189,7 +189,7 @@ public class S3Repository {
 		String folderNamePath = algorithmId + "/" + folerName;
 		List<File> fileList = new ArrayList<>();
 
-		// 100개씩 페이징
+		// 20개씩 페이징
 		ListObjectsV2Request request = ListObjectsV2Request.builder()
 			.bucket(bucket)
 			.maxKeys(20)
