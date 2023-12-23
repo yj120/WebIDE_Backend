@@ -22,8 +22,6 @@ public interface FileProcessRepository {
 
     public Optional<RunCode> getMetaData(String filePath);
 
-    public Optional<Algorithm> findAlgorithmById(Long id);
-
     public List<FileTreeResponse> findFileTrees(String prefix);
 
 }

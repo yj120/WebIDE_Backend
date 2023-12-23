@@ -108,6 +108,7 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
                 .destinationBucket(bucketName)
                 .destinationKey(afterFilePath)
                 .build();
+
         try {
             s3.copyObject(copyRequest);
         } catch (Exception e) {
@@ -131,6 +132,7 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
     @Override
     public RunCode saveMetaData(RunCode runCode) {
         RunCode findCode = em.find(RunCode.class, runCode.getSourceUrl());
+
         if (findCode == null) {
             em.persist(runCode);
             return runCode;
@@ -145,11 +147,6 @@ public class FileProcessingRepositoryImpl implements FileProcessRepository{
     @Override
     public Optional<RunCode> getMetaData(String filePath) {
         return Optional.ofNullable(em.find(RunCode.class, filePath));
-    }
-
-    @Override
-    public Optional<Algorithm> findAlgorithmById(Long id) {
-        return Optional.ofNullable(em.find(Algorithm.class, id));
     }
 
     @Override
