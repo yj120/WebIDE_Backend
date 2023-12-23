@@ -44,7 +44,9 @@ public class ExecuteService {
 		Extension fileExtension = executeRequestDto.getFileExtension();
 		String testCase = executeRequestDto.getTestCase();
 		ExecuteAllFileSet executeAllFileSet;
+
 		try {
+
 			// 절대 경로 지정 및 디렉토리 생성
 			String directoryPath = Files.createDirectories(Paths.get(uuid)).toAbsolutePath() + "/";
 			folder = new File(directoryPath);
@@ -53,8 +55,6 @@ public class ExecuteService {
 			 executeAllFileSet = runService.getExecuteAllFilesSet(fileExtension, algorithmId,
 				directoryPath, s3Key, testCase);
 
-			// TODO testcases null인 경우 처리해야 함.
-
 			// compile 진행
 			ExcuteExcuteFileSet excuteExcuteFileSet;
 			if (fileExtension.equals(Extension.PYTHON3)) {
@@ -62,15 +62,15 @@ public class ExecuteService {
 				excuteExcuteFileSet = ExcuteExcuteFileSet.pythonOf(executeAllFileSet);
 			} else {
 
-				// compile할 sourceCode로 변환
+				// compile할 sourceCode class로 변환
 				SourceCodeFileSet sourceCodeFileSet = SourceCodeFileSet.of(executeAllFileSet);
 
 				// compile 진행
 				int exitCode = runService.compileSourceCodeFile(fileExtension, sourceCodeFileSet);
 
 				if (exitCode != 0) {
-					String errors = runService.fileToString(sourceCodeFileSet.getErrorFile());
-					String replaced = errors.replace(executeAllFileSet.getSourceCodeFile().getAbsolutePath(), "현재 파일");
+					String errors = runService.fileToString(sourceCodeFileSet.getOutputFile());
+					String replaced = errors.replace(executeAllFileSet.getSourceCodeFile().getAbsolutePath(),s3Key);
 					// compile error 발생, 결과 return
 					return ApiResponse.executeOkFrom(replaced);
 				} else {
@@ -80,24 +80,20 @@ public class ExecuteService {
 
 			// 파일 실행 및 결과 반환
 			String result = executeFile(fileExtension, excuteExcuteFileSet);
-			String replaced = result.replace(executeAllFileSet.getSourceCodeFile().getAbsolutePath(), "현재 파일");
+			String replaced = result.replace(executeAllFileSet.getSourceCodeFile().getAbsolutePath(), s3Key);
 			return ApiResponse.executeOkFrom(replaced);
 
 		} catch (Exception e) {
-			// TODO Exception 한번에 잡기!!! -> e.getMessage()
 			log.error("{}", e.getMessage());
 			return ApiResponse.executeServerErrorFrom(e.getMessage());
 		} finally {
-			// TODO 모든 File 지웠는지 확인 - @test
-			// TODO folder가 null인 경우, finally 내에서 return  사용 처리
-			// TODO Finally에 넣으니 error 발생할 때 추적 불가.
+
 
 			// 모두 지워지지 않았다면, 서버 에러 메시지 출력
 			if (!runService.deleteFolder(folder)) {
 
 				log.error("모든 File 지우기 실패");
 				return ApiResponse.executeServerErrorFrom("모든 File 지우기 실패");
-				// return ApiResponse.serverErrorFrom(Answer.SERVER_ERROR, "모든 File 지우기 실패");
 			}
 		}
 
@@ -107,9 +103,7 @@ public class ExecuteService {
 		IOException,
 		InterruptedException, OutOfMemoryError {
 
-		// TODO output 파일 필요?
 		File outputFile = excuteExcuteFileSet.getOutputFile();
-		File errorFile = excuteExcuteFileSet.getErrorFile();
 		StringBuilder stringBuilder = new StringBuilder();
 
 		File testcase = excuteExcuteFileSet.getTestcase();
@@ -119,8 +113,6 @@ public class ExecuteService {
 		// sourceCode processBuilder 생성
 		ProcessBuilder processBuilder = new ProcessBuilder(cmd);
 		processBuilder.redirectInput(testcase);
-		// 이게 있어야 BufferdReader에서 line 읽을 때도 읽는 듯. Error를 output으로 redirect해야 line에 추가되는 듯.
-		// processBuilder.redirectError(outputFile);
 		processBuilder.redirectErrorStream(true);
 
 		// 프로세스 실행
@@ -136,8 +128,7 @@ public class ExecuteService {
 			return runService.fileToString(outputFile);
 		}
 
-		// TODO PYTHON3 timout4 java에서 OutOfMemoryError 발생.
-		// 표준 출력 스트림 (표준 오류 포함) 읽기
+		// 표준 출력 스트림 (표준 오류 포함) 읽기 - redirectErrorStream(true)로 인해 표준 오류도 포함됨.
 		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 		String line;
 		while ((line = reader.readLine()) != null) {
@@ -145,14 +136,8 @@ public class ExecuteService {
 		}
 		writer.write(stringBuilder.toString());
 		writer.flush();
-
-
-
-
+		writer.close();
 		return runService.fileToString(outputFile);
-
 	}
-
-
 
 }

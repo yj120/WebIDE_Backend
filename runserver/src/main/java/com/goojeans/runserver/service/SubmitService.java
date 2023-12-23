@@ -41,6 +41,7 @@ public class SubmitService {
 		Extension fileExtension = submitRequestDto.getFileExtension();
 
 		try {
+
 			// 절대 경로 지정 및 디렉토리 생성
 			String directoryPath = Files.createDirectories(Paths.get(uuid)).toAbsolutePath() + "/";
 			folder = new File(directoryPath);
@@ -72,32 +73,25 @@ public class SubmitService {
 
 				// compile 진행
 				int exitCode = runService.compileSourceCodeFile(fileExtension, sourceCodeFileSet);
-				log.info("exitCode: {}", exitCode);
-				File outputFile = sourceCodeFileSet.getOutputFile();
 				if (exitCode != 0) {
 					// compile error 발생, 결과 return
-					log.info("outputFile: {}", runService.fileToString(outputFile));
 					return ApiResponse.submitOkFrom(Answer.WRONG);
 				} else {
 					submitExecuteFileSet = SubmitExecuteFileSet.sourceCodeOf(submitAllFilesSet, sourceCodeFileSet);
 				}
 			}
 
-			// TODO 실행,  채점 나누기.
 			// 실행 파일 실행 - 채점 결과 return
-			ApiResponse<SubmitResponseDto> submitResponseDtoApiResponse = checkTheAnswer(fileExtension,
+			return checkTheAnswer(fileExtension,
 				submitExecuteFileSet);
-			return submitResponseDtoApiResponse;
 
 		} catch (Exception e) {
 			return ApiResponse.submitServerErrorFrom(Answer.SERVER_ERROR, e.getMessage());
 		} finally {
-			// TODO Exception 한번에 잡기!!! -> e.getMessage()
 			// 모두 지워지지 않았다면, 서버 에러 메시지 출력
 			if (!runService.deleteFolder(folder)) {
 				log.error("모든 File 지우기 실패");
 				return ApiResponse.submitServerErrorFrom(Answer.SERVER_ERROR, "모든 File 지우기 실패");
-				// return ApiResponse.serverErrorFrom(Answer.SERVER_ERROR, "모든 File 지우기 실패");
 			}
 		}
 
@@ -151,7 +145,6 @@ public class SubmitService {
 			processBuilder.redirectInput(testcase);
 			processBuilder.redirectOutput(outputFile);
 			processBuilder.redirectError(errorFile);
-			// processBuilder.redirectErrorStream(true);
 
 			// 프로세스 실행
 			Process process = processBuilder.start();
@@ -161,19 +154,13 @@ public class SubmitService {
 				writer.write("런타임 시간 초과");
 				return Answer.TIMEOUT;
 			}
-			log.info("outputFile: {}", runService.fileToString(outputFile));
-			log.info("errorFile: {}", runService.fileToString(errorFile));
-			// TODO CPP 런타임 에러 로그 처리
+
 			// runtime error
 			int exitCode = process.exitValue();
 			if (exitCode != 0) {
 				return Answer.WRONG;
 			}
 
-			// 프로세스 실행
-
-			// log.info("outputFile: {}", runService.fileToString(outputFile));
-			// log.info("errorFile: {}", runService.fileToString(errorFile));
 			// 정답 파일과 출력 파일 비교 - 그냥 틀림
 			if (!compareToAnswer(outputFile, answer)) {
 				return Answer.WRONG;
