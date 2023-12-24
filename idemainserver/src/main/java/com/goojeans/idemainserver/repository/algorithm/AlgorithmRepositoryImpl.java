@@ -13,29 +13,29 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AlgorithmRepositoryImpl implements AlgorithmRepository {
 
-    private final EntityManager em;
+	private final EntityManager em;
 
-    @Override
-    public Optional<Algorithm> findAlgorithmById(Long algorithmId) {
-        Algorithm findAlgo = em.find(Algorithm.class, algorithmId);
+	@Override
+	public Optional<Algorithm> findAlgorithmById(Long algorithmId) {
+		Algorithm findAlgo = em.find(Algorithm.class, algorithmId);
 
-        return Optional.ofNullable(findAlgo);
-    }
+		return Optional.ofNullable(findAlgo);
+	}
 
-    @Override
-    public List<Algorithm> findAllAlgorithm() {
-        String jpql = "select a from Algorithm a";
-        TypedQuery<Algorithm> query = em.createQuery(jpql, Algorithm.class);
-        return query.getResultList();
-    }
+	@Override
+	public List<Algorithm> findAllAlgorithm() {
+		String jpql = "select a from Algorithm a";
+		TypedQuery<Algorithm> query = em.createQuery(jpql, Algorithm.class);
+		return query.getResultList();
+	}
 
-    @Override
-    public List<Algorithm> findSolvedAlgorithm(Long userId) {
-        String jpql = "select a from Algorithm a left join fetch a.memberSolves";
+	@Override
+	public List<Algorithm> findSolvedAlgorithm(Long userId) {
+		String jpql = "select a from Algorithm a left join fetch a.memberSolves";
 
-        TypedQuery<Algorithm> query = em.createQuery(jpql, Algorithm.class);
+		TypedQuery<Algorithm> query = em.createQuery(jpql, Algorithm.class);
 
-        return query.getResultList();
-    }
+		return query.getResultList();
+	}
 
 }
