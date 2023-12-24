@@ -11,7 +11,10 @@ import java.util.List;
 @Setter
 public class ResponseDto<T> {
     private int statusCode;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<T> data;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String error;
 
 
 }

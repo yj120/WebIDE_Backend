@@ -57,6 +57,8 @@ public class SecurityConfig {
                 // 기본 페이지, css, image, js 하위 폴더에 있는 자료들은 모두 접근 가능, h2-console에 접근 가능
                 .authorizeRequests(reqs-> reqs
                         .requestMatchers("/","/resources/**","/css/**","/images/**","/js/**","/favicon.ico","/h2-console/**").permitAll()
+                        // "admin/"으로 시작하는 URL은 ADMIN 역할을 가진 사용자만 접근 가능
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/login").permitAll()
                         .requestMatchers("/oauth/sign-up").permitAll()
                         .requestMatchers("/sign-up").permitAll()

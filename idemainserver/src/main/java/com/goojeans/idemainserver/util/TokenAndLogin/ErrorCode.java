@@ -7,16 +7,21 @@ public enum ErrorCode {
 
     OK(HttpServletResponse.SC_OK,200,"REQUEST SUCCESS"),
 
+
+    INVALID_TOKEN(HttpServletResponse.SC_BAD_REQUEST,4000,"Token Invalid."),
+
     // 회원 가입 관련 1
-    ALEADY_EXIST_EMAIL(HttpServletResponse.SC_BAD_REQUEST, 4001, "aleady Exist"),
-    ALEADY_EXIST_NICKNAME(HttpServletResponse.SC_BAD_REQUEST, 4011, "aleady Exist"),
+    ALEADY_EXIST_EMAIL(HttpServletResponse.SC_BAD_REQUEST, 4001, "Aleady Exist"),
+    ALEADY_EXIST_NICKNAME(HttpServletResponse.SC_BAD_REQUEST, 4011, "Aleady Exist"),
+    MISSING_VALUE(HttpServletResponse.SC_BAD_REQUEST,4111,"Missing value"),
+    MISSING_REQUIRED_INFORMATION(HttpServletResponse.SC_BAD_REQUEST,4121,"Missing Required Information"),
 
     // 로그인 관련 2
-    LOGIN_FAIL(HttpServletResponse.SC_BAD_REQUEST,4012,"general login failed"),
-    LOGIN_FAIL_SOCIAL(HttpServletResponse.SC_BAD_REQUEST,4022,"social login failed"),
+    LOGIN_FAIL(HttpServletResponse.SC_BAD_REQUEST,4012,"Please recheck your password and email"),
+    LOGIN_FAIL_SOCIAL(HttpServletResponse.SC_BAD_REQUEST,4022,"Please recheck your password and email"),
 
     // 마이페이지 수정 4
-    EDIT_FAIL(HttpServletResponse.SC_BAD_REQUEST,4014,"edit failed"),
+    EDIT_FAIL(HttpServletResponse.SC_BAD_REQUEST,4014,"failed Modify"),
 
 
     ENTITY_NOT_FOUND(4002, HttpServletResponse.SC_BAD_REQUEST,"Entity Not Found"),

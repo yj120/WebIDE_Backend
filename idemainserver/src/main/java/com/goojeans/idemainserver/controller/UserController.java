@@ -1,13 +1,10 @@
 package com.goojeans.idemainserver.controller;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goojeans.idemainserver.domain.dto.request.TokenAndLogin.PasswordDto;
 import com.goojeans.idemainserver.domain.dto.request.TokenAndLogin.UserSignUpDto;
-import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.ResponsDataDto;
-import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.OAuthUserInfoDto;
-import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.ResponseDto;
-import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.UserInfoDto;
-import com.goojeans.idemainserver.domain.entity.Users.User;
+import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.*;
 import com.goojeans.idemainserver.repository.Users.UserRepository;
 import com.goojeans.idemainserver.service.UserService;
 import com.goojeans.idemainserver.util.TokenAndLogin.ApiException;
@@ -18,15 +15,16 @@ import com.goojeans.idemainserver.util.TokenAndLogin.login.service.LoginService;
 import com.goojeans.idemainserver.util.TokenAndLogin.oauth2.service.CustomOAuth2UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.io.PrintWriter;
+import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -41,8 +39,7 @@ public class UserController {
 
 
 
-//     루트경로로 매핑 시켜주기
-//     로컬에서 돌릴때는 주석처리 해야 잘 돌아가네?
+    //루트 경로로 매핑
     @GetMapping("/")
     public void home(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Optional<String> s = jwtService.extractAccessToken(request);
@@ -57,73 +54,47 @@ public class UserController {
     }
 
     // 로그인 성공
+    // 로그인 성공 시 토큰 return
     // 로그인 실패는 failure handler 에서 처리
     @GetMapping("/login/success")
-    public ResponseDto<ResponsDataDto> login(@RequestParam("token") String token, HttpServletRequest request){
-        ResponseDto<ResponsDataDto> responseDto = new ResponseDto<>();
-        ResponsDataDto responsDataDto = new ResponsDataDto();
-        responsDataDto.setMessage(token);
-        List<ResponsDataDto> data= new ArrayList<>();
-        data.add(responsDataDto);
-        responseDto.setStatusCode(ErrorCode.OK.getStatus());
-        responseDto.setData(data);
-        return responseDto;
+    public ResponseDto<ResponseDataDto> login(@RequestParam("token") String token, HttpServletRequest request){
+        ApiResponse apiResponse = new ApiResponse();
+        return apiResponse.ok(ErrorCode.OK.getStatus(), token);
     }
 
-    // 회원 가입
-    // 일반 회원 가입
+    // 회원 가입 - 일반 회원 가입
     @PostMapping("/sign-up")
-    public ResponseDto<ResponsDataDto> signUp(@RequestBody UserSignUpDto userSignUpDto){
-
-        ResponseDto<ResponsDataDto> responseDto = new ResponseDto<>();
+    public ResponseDto<?> signUp(@RequestBody @Valid UserSignUpDto userSignUpDto, BindingResult bindingResult){
+        ApiResponse apiResponse = new ApiResponse();
+        // @NotNull 조건 검사
+        if (bindingResult.hasErrors()) {
+            return apiResponse.fail(ErrorCode.MISSING_REQUIRED_INFORMATION.getStatus(), ErrorCode.MISSING_REQUIRED_INFORMATION.getMessage());
+        }
+        // 회원가입 서비스
         try{
             userService.signUp(userSignUpDto);
         }catch (ApiException e){
-            ResponsDataDto responsDataDto = new ResponsDataDto();
-            responsDataDto.setMessage(e.getMessage());
-            List<ResponsDataDto> data= new ArrayList<>();
-            data.add(responsDataDto);
-            responseDto.setData(data);
-            responseDto.setStatusCode(e.getErrorCode().getStatus());
-            return responseDto;
+            // 회원가입 실패
+            return apiResponse.fail(e.getErrorCode().getStatus(), e.getMessage());
         }
-
-        ResponsDataDto responsDataDto = new ResponsDataDto();
-        responsDataDto.setMessage("회원가입 성공");
-        List<ResponsDataDto> data= new ArrayList<>();
-        data.add(responsDataDto);
-        responseDto.setStatusCode(ErrorCode.OK.getStatus());
-        responseDto.setData(data);
-
-
-        return responseDto;
+        // 회원 가입 성공
+        return apiResponse.ok(ErrorCode.OK.getStatus(), ErrorCode.OK.getMessage());
     }
 
-    // 회원 가입
-    // OAuth 회원 가입
+
+    // 회원 가입 - OAuth 회원 가입
     // 블로그 주소, 주소, Role 업데이트
     @PostMapping("/sign-up/update")
-    public ResponseDto<String> updateUser(@RequestParam String blog,
-                                          @RequestParam String city,
+    public ResponseDto<?> updateUser(@RequestParam(required = true) String blog,
+                                          @RequestParam(required = true) String city,
                                           HttpServletRequest request){
-        ResponseDto<String> responseDto = new ResponseDto<>();
-        Optional<String> extracted = jwtService.extractAccessToken(request);
-        if(extracted.isPresent()){
-            String token = extracted.get();
-            Optional<String> extractEmail = jwtService.extractEmail(token);
-            String email = extractEmail.get();
-            userService.updateUserBlogAndAddress(email,blog,city);
-            responseDto.setStatusCode(ErrorCode.OK.getStatus());
-            List<String> data = new ArrayList<>();
-            data.add("ok");
-            responseDto.setData(data);
-            return responseDto;
+        ApiResponse apiResponse = new ApiResponse();
+        try{
+            userService.setUserBlogAndAddress(request,blog,city);
+        }catch (ApiException e){
+            return apiResponse.fail(ErrorCode.INVALID_TOKEN.getStatus(), ErrorCode.INVALID_TOKEN.getMessage());
         }
-        responseDto.setStatusCode(ErrorCode.NOT_FOUND.getStatus());
-        List<String> data = new ArrayList<>();
-        data.add("NOT EXIST USER");
-        responseDto.setData(data);
-        return responseDto;
+        return apiResponse.ok(ErrorCode.OK.getStatus(), ErrorCode.OK.getMessage());
     }
 
 
@@ -133,127 +104,74 @@ public class UserController {
     public ResponseDto<OAuthUserInfoDto> oauthSignup(@RequestParam(name="token")String token, HttpServletResponse response){
 
         log.info("신규회원");
-        ResponseDto<OAuthUserInfoDto> responseDto = new ResponseDto<>();
-
-        OAuthUserInfoDto oAuthUserInfoDto = userService.getOAuthUserInfoDto(token);
-        List<OAuthUserInfoDto> data = new ArrayList<>();
-        data.add(oAuthUserInfoDto);
-
-        responseDto.setStatusCode(ErrorCode.OK.getStatus());
-        responseDto.setData(data);
-
-        return responseDto;
+        return userService.getOAuthUserInfoDto(token);
     }
 
     // 사용자 정보
     @PostMapping("/api/userInfo")
-    public ResponseDto<UserInfoDto> userInfo(HttpServletRequest request, HttpServletResponse response){
-        ResponseDto<UserInfoDto> responseDto = new ResponseDto<>();
-        Optional<String> s = jwtService.extractAccessToken(request);
-        String Token = s.orElse("not valid value");
-
-        boolean tokenValid = jwtService.isTokenValid(Token);
-
-        UserInfoDto userInfo = userService.getUserInfo(request);
-        responseDto.setStatusCode(ErrorCode.OK.getStatus());
-        List<UserInfoDto> list = new ArrayList<>();
-        list.add(userInfo);
-        responseDto.setData(list);
-        return  responseDto;
+    public ResponseDto<?> userInfo(HttpServletRequest request, HttpServletResponse response){
+        ApiResponse apiResponse = new ApiResponse();
+        ResponseDto responseDto = new ResponseDto();
+        try{
+            UserInfoDto userInfo = userService.getUserInfo(request);
+            return apiResponse.ok(ErrorCode.OK.getStatus(), userInfo);
+        }catch (ApiException e){
+            return apiResponse.fail(e.getErrorCode().getStatus(),e.getMessage());
+        }
     }
 
 
-    // 마이페이지 블로그, 주소 수정
+    // 마이페이지 - 블로그, 주소 수정
     @PostMapping("/mypage/edit/blogAndcity")
-    public ResponseDto<ResponsDataDto> updateBlogAndCity(@RequestParam String blog,
+    public ResponseDto<?> updateBlogAndCity(@RequestParam String blog,
                                           @RequestParam String city,
                                           HttpServletRequest request){
-        Optional<String> extracted = jwtService.extractAccessToken(request);
-        if(extracted.isPresent()){
-            String token = extracted.get();
-            Optional<String> extractEmail = jwtService.extractEmail(token);
-            String email = extractEmail.get();
-            //update
-            userService.updateUserBlogAndAddress(email,blog,city);
-
-            ApiResponse apiResponse = new ApiResponse();
-            ResponseDto<ResponsDataDto> responseDto = apiResponse.ok(ErrorCode.OK.getStatus(), "저장완료");
-            return responseDto;
+        ApiResponse apiResponse = new ApiResponse();
+        if(blog.isEmpty() || blog==null){
+            return apiResponse.fail(ErrorCode.MISSING_REQUIRED_INFORMATION.getStatus(),ErrorCode.MISSING_REQUIRED_INFORMATION.getMessage());
         }
-        return new ApiResponse().fail(ErrorCode.EDIT_FAIL.getStatus(), "저장실패");
+        if(city.isEmpty() || city==null){
+            return apiResponse.fail(ErrorCode.MISSING_REQUIRED_INFORMATION.getStatus(),ErrorCode.MISSING_REQUIRED_INFORMATION.getMessage());
+        }
+        return userService.updateBlogAndAdress(request,blog,city);
     }
 
 
-    // 마이페이지 비밀번호 수정
+    // 마이페이지 - 비밀번호 수정
     @PostMapping("/mypage/edit/password")
-    public ResponseDto<String> updatePassword(@RequestBody PasswordDto password,
+    public ResponseDto<?> updatePassword(@RequestBody PasswordDto password,
                                               HttpServletRequest request){
-        ResponseDto<String> responseDto = new ResponseDto<>();
-        Optional<String> extracted = jwtService.extractAccessToken(request);
-        if(extracted.isPresent()){
-            String token = extracted.get();
-            Optional<String> extractEmail = jwtService.extractEmail(token);
-            String email = extractEmail.get();
-            //update
-            userService.updateUserPassword(email,password);
-            responseDto.setStatusCode(ErrorCode.OK.getStatus());
-            List<String> data = new ArrayList<>();
-            data.add("ok");
-            responseDto.setData(data);
-            return responseDto;
+        if(password.getPassword()==null){
+            ApiResponse apiResponse = new ApiResponse();
+            return apiResponse.fail(ErrorCode.MISSING_REQUIRED_INFORMATION.getCode(), ErrorCode.MISSING_REQUIRED_INFORMATION.getMessage());
         }
-        responseDto.setStatusCode(ErrorCode.NOT_FOUND.getStatus());
-        List<String> data = new ArrayList<>();
-        data.add("NOT EXIST USER");
-        responseDto.setData(data);
-        return responseDto;
+        ApiResponse apiResponse = new ApiResponse();
+        return userService.updateUserPassword(request,password);
     }
 
-    // 마이페이지 사용자 프로필 수정
-    @PostMapping("/mypage/edit/{userId}/profile-image")
-    public ResponseDto<ResponsDataDto> uploadProfileImage(@PathVariable Long userId,
-                                                          @RequestParam("image")MultipartFile image){
+
+    // 로그아웃 -> 근데 안쓰일듯? 기본 로그아웃 제공해주는 듯함..
+    @GetMapping("/logout")
+    public void authenticatedOnly(HttpServletRequest request,HttpServletResponse response){
         try{
-            Optional<User> optionalUser = userRepository.findById(userId);
-            if(optionalUser.isPresent()){
-                User user = optionalUser.get();
-                userService.saveProfileImage(user,image);
-                ResponseDto<ResponsDataDto> responseDto = new ResponseDto<>();
-                ResponsDataDto responsDataDto = new ResponsDataDto();
-                responsDataDto.setMessage("Profile image updated successfully.");
-                List<ResponsDataDto> data = new ArrayList<>();
-                responseDto.setData(data);
-                responseDto.setStatusCode(ErrorCode.OK.getStatus());
-                return responseDto;
-            }
-
+            // main 화면으로 리다이렉트 + 로컬 스토리지에서 토큰삭제
+            log.info("사용자 로그아웃");
+            response.sendRedirect("/main");
         }catch (Exception e){
-            ResponseDto<ResponsDataDto> responseDto = new ResponseDto<>();
-            ResponsDataDto responsDataDto = new ResponsDataDto();
-            responsDataDto.setMessage("Failed to upload image: " + e.getMessage());
-            List<ResponsDataDto> data = new ArrayList<>();
-            data.add(responsDataDto);
-            responseDto.setData(data);
-            responseDto.setStatusCode(ErrorCode.EDIT_FAIL.getStatus());
-            return responseDto;
+            response.setContentType("text/html;charset=UTF-8");
+            try(PrintWriter out = response.getWriter()) {
+                // 커스텀 에러 메시지
+                ApiResponse apiResponse = new ApiResponse();
+                ResponseDto<ResponseDataDto> errormessage = apiResponse.fail(ErrorCode.ACCESS_DENIED.getStatus(), "잘못된 접근");
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                String jsonString = objectMapper.writeValueAsString(errormessage);
+                out.println(jsonString);
+            }catch (Exception ex){
+                // 서버에 에러 로그 띄우기
+                log.error(ex.getMessage());
+            }
         }
-        return null;
-    }
-
-    // TODO 이미지 db 에 저장은 되었으니, db에 저장된 이미지를 프론트로 보내는 테스트 ...
-
-
-
-
-
-
-
-
-
-    // TEST 필터 확인 겸 인증이 안된 사람은 접근 불가
-    @GetMapping("/authenticated")
-    public String authenticatedOnly(HttpServletRequest request,HttpServletResponse response){
-        return "you are authenticated";
     }
     @GetMapping("/PUBLIC")
     public String pb(){
