@@ -17,11 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class AdminUserServiceImpl implements AdminUserService {
+public class AdminUserService {
 
 	private final UserRepository userRepository;
 
-	@Override
 	@Transactional(readOnly = true)
 	public UserResponseDto getUser(Long id) {
 		User userEntity = userRepository.findById(id)
@@ -29,7 +28,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 		return UserResponseDto.of(userEntity);
 	}
 
-	@Override
+
 	@Transactional(readOnly = true)
 	public List<UserResponseDto> getAllUsers() {
 		return userRepository.findAll()
@@ -38,7 +37,6 @@ public class AdminUserServiceImpl implements AdminUserService {
 			.toList();
 	}
 
-	@Override
 	public UserResponseDto deleteUser(Long id) {
 		userRepository.deleteById(id);
 		return UserResponseDto.of(null);
