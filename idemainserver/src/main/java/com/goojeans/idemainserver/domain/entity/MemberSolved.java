@@ -19,7 +19,7 @@ public class MemberSolved extends BaseEntity{
     private Long id;
 
     @NotNull
-    private boolean solved;
+    private Boolean solved;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "algorithm_id")
