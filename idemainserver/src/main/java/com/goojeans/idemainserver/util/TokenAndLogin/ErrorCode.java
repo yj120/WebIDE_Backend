@@ -11,8 +11,8 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpServletResponse.SC_BAD_REQUEST,4000,"Token Invalid."),
 
     // 회원 가입 관련 1
-    ALEADY_EXIST_EMAIL(HttpServletResponse.SC_BAD_REQUEST, 4001, "Aleady Exist"),
-    ALEADY_EXIST_NICKNAME(HttpServletResponse.SC_BAD_REQUEST, 4011, "Aleady Exist"),
+    ALEADY_EXIST_EMAIL(HttpServletResponse.SC_BAD_REQUEST, 4001, "Duplicate email account exists"),
+    ALEADY_EXIST_NICKNAME(HttpServletResponse.SC_BAD_REQUEST, 4011, "Duplicate nickname account exists"),
     MISSING_VALUE(HttpServletResponse.SC_BAD_REQUEST,4111,"Missing value"),
     MISSING_REQUIRED_INFORMATION(HttpServletResponse.SC_BAD_REQUEST,4121,"Missing Required Information"),
 
