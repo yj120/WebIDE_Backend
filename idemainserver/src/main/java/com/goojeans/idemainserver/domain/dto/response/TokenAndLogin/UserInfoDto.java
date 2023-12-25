@@ -1,13 +1,16 @@
 package com.goojeans.idemainserver.domain.dto.response.TokenAndLogin;
 
 import com.goojeans.idemainserver.util.TokenAndLogin.Role;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
 public class UserInfoDto {
     private String email;
     private String nickname;
