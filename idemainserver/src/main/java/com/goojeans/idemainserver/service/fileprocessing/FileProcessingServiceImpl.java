@@ -104,6 +104,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
 
         try {
             uploadFile = getFile(request.getSourceCode());
+            repository.saveFile(awsKeyPath, uploadFile);
 
             response = restPost(requestUrl + "/execute", executeRequest, ExecuteResponse.class);
 
@@ -111,7 +112,6 @@ public class FileProcessingServiceImpl implements FileProcessService{
                 log.info("run server error={}", response.getError());
                 throw new RuntimeException(response.getError());
             }
-            repository.saveFile(awsKeyPath, uploadFile);
         } catch (Exception e) {
             log.info("error={}", e.getStackTrace());
             return new FileProcessResponse<>(6000, null, e.getMessage());
