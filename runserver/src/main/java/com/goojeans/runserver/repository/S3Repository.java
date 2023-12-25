@@ -37,7 +37,7 @@ public class S3Repository {
 
 	private final S3Client s3Client;
 
-	@Value("${cloud.aws.s3.bucket}")
+	@Value("${BUCKET_NAME}")
 	private String bucket;
 	private static final String TESTCASES = "testcases";
 	private static final String ANSWERS = "answers";
