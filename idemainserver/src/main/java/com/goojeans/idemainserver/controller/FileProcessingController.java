@@ -3,10 +3,15 @@ package com.goojeans.idemainserver.controller;
 import com.goojeans.idemainserver.domain.dto.request.FileRequests.*;
 import com.goojeans.idemainserver.domain.dto.response.FileResponses.*;
 import com.goojeans.idemainserver.service.fileprocessing.FileProcessService;
+import com.goojeans.idemainserver.util.TokenAndLogin.jwt.service.JwtService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -15,13 +20,20 @@ import org.springframework.web.bind.annotation.*;
 public class FileProcessingController {
 
     private final FileProcessService service;
+    private final JwtService jwtService;
 
     @PostMapping("/sourcecode")
-    public FileProcessResponse<SourceCodeResponse> findSourceCode(@Validated @RequestBody SourceCodeRequest sourceRequest) {
-        //TODO: get userId from jwt token
-        Long tempUserId = 1L;
+    public FileProcessResponse<SourceCodeResponse> findSourceCode(@Validated @RequestBody SourceCodeRequest sourceRequest,
+                                                                  HttpServletRequest request) {
+        Optional<String> jwtToken = jwtService.extractAccessToken(request);
+        String token = jwtToken.orElse("not valid value");
 
-        sourceRequest.setUserId(tempUserId);
+        Map<String, String> decode = jwtService.decode(token);
+
+        String id = decode.get("id");
+        log.info("check id={}", id);
+        sourceRequest.setUserId(Long.parseLong(id));
+
         return service.findSourceCode(sourceRequest);
     }
 
@@ -31,77 +43,94 @@ public class FileProcessingController {
     }
 
     @PostMapping("/delete")
-    public FileProcessResponse<FileTreeResponse> deleteFile(@Validated @RequestBody DeleteFileRequest deleteRequest) {
-        //TODO: get userId from jwt token
-        Long tempUserId = 1L;
+    public FileProcessResponse<FileTreeResponse> deleteFile(@Validated @RequestBody DeleteFileRequest deleteRequest,
+                                                            HttpServletRequest request) {
+        Optional<String> jwtToken = jwtService.extractAccessToken(request);
+        String token = jwtToken.orElse("not valid value");
 
-        deleteRequest.setUserId(tempUserId);
+        Map<String, String> decode = jwtService.decode(token);
+
+        String id = decode.get("id");
+        log.info("check id={}", id);
+        deleteRequest.setUserId(Long.parseLong(id));
 
         return service.deleteFile(deleteRequest);
     }
 
     @PatchMapping("/modification")
-    public FileProcessResponse<FileTreeResponse> modifyFilePath(@Validated @RequestBody ModifyPathRequest modifyRequest) {
-        //TODO: get userId from jwt token
-        Long tempUserId = 1L;
+    public FileProcessResponse<FileTreeResponse> modifyFilePath(@Validated @RequestBody ModifyPathRequest modifyRequest,
+                                                                HttpServletRequest request) {
+        Optional<String> jwtToken = jwtService.extractAccessToken(request);
+        String token = jwtToken.orElse("not valid value");
 
-        modifyRequest.setUserId(tempUserId);
+        Map<String, String> decode = jwtService.decode(token);
+
+        String id = decode.get("id");
+        log.info("check id={}", id);
+        modifyRequest.setUserId(Long.parseLong(id));
 
         return service.modifyFileStructure(modifyRequest);
     }
 
     @PostMapping("/execute")
-    public FileProcessResponse<ExecuteResponse> executeCode(@Validated @RequestBody ExecuteRequest executeRequest) {
-        //TODO: get userId from jwt token
-        Long tempUserId = 1L;
-        executeRequest.setUserId(tempUserId);
+    public FileProcessResponse<ExecuteResponse> executeCode(@Validated @RequestBody ExecuteRequest executeRequest,
+                                                            HttpServletRequest request) {
+        Optional<String> jwtToken = jwtService.extractAccessToken(request);
+        String token = jwtToken.orElse("not valid value");
+
+        Map<String, String> decode = jwtService.decode(token);
+
+        String id = decode.get("id");
+
+        executeRequest.setUserId(Long.parseLong(id));
 
         return service.executeAndSaveCode(executeRequest);
     }
 
     @PostMapping("/submit")
-    public FileProcessResponse<SubmitResponse> submitCode(@Validated @RequestBody SubmitRequest submitRequest) {
-        //TODO: get userId from jwt token
-        Long tempUserId = 1L;
-        submitRequest.setUserId(tempUserId);
+    public FileProcessResponse<SubmitResponse> submitCode(@Validated @RequestBody SubmitRequest submitRequest,
+                                                          HttpServletRequest request) {
+
+        Optional<String> jwtToken = jwtService.extractAccessToken(request);
+        String token = jwtToken.orElse("not valid value");
+
+        Map<String, String> decode = jwtService.decode(token);
+
+        String id = decode.get("id");
+
+        submitRequest.setUserId(Long.parseLong(id));
 
         return service.submitAndSaveCode(submitRequest);
     }
 
     @GetMapping("/filetrees/{algorithmId}")
-    public FileProcessResponse<FileTreeResponse> getAllFileTree(@PathVariable Long algorithmId) {
-        //TODO: get userId from jwt token
-        Long tempUserId = 1L;
+    public FileProcessResponse<FileTreeResponse> getAllFileTree(@PathVariable Long algorithmId,
+                                                                HttpServletRequest request) {
+        Optional<String> jwtToken = jwtService.extractAccessToken(request);
+        String token = jwtToken.orElse("not valid value");
 
-        return service.findFileTree(new FileTreeRequest(algorithmId, tempUserId));
+        Map<String, String> decode = jwtService.decode(token);
+
+        String id = decode.get("id");
+
+        return service.findFileTree(new FileTreeRequest(algorithmId, Long.parseLong(id)));
     }
 
 
     @PostMapping("/filecreate")
-    public FileProcessResponse<FileTreeResponse> createFileFolder(@Validated @RequestBody CreateFileRequest request) {
-        //TODO: get userId from jwt token
-        /**
-        // JwtService 의존성 주입 필요
-        // 파라미터에 "HttpServletRequest request"  추가 필요
+    public FileProcessResponse<FileTreeResponse> createFileFolder(@Validated @RequestBody CreateFileRequest fileRequest,
+                                                                  HttpServletRequest request) {
 
-        // 헤더에 담긴 토큰 추출
-        Optional<String> jwttoken = jwtService.extractAccessToken(request);
-        String token = jwttoken.orElse("not valid value");
-        // 토큰 복호화
+        Optional<String> jwtToken = jwtService.extractAccessToken(request);
+        String token = jwtToken.orElse("not valid value");
+
         Map<String, String> decode = jwtService.decode(token);
-        // 닉네임
-        String nickname = decode.get("nickname");
-        // id
+
         String id = decode.get("id");
 
-        log.info("======> nickname={},id={}",nickname,id);
-         **/
+        fileRequest.setUserId(Long.parseLong(id));
 
-        Long tempUserId = 1L;
-
-        request.setUserId(tempUserId);
-
-        return service.createFileOrFolder(request);
+        return service.createFileOrFolder(fileRequest);
     }
 
 }
