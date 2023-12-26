@@ -206,7 +206,7 @@ public class JwtService {
 
         String email = decode.getClaim(EMAIL_CLAIM).asString();
         String nickname = decode.getClaim(NICK_NAME).asString();
-        String Id = decode.getClaim(PRIMARY_KEY).asString();
+        String Id = decode.getClaim(PRIMARY_KEY).toString();
 
         // test
 //        log.info("nickname={}",nickname);
