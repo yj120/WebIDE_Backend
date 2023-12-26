@@ -1,9 +1,7 @@
 package com.goojeans.idemainserver.repository.algorithm;
 
-import com.goojeans.idemainserver.domain.dto.response.algorithmresponse.AllAlgoResponse;
 import com.goojeans.idemainserver.domain.entity.Algorithm;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
