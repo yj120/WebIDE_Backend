@@ -12,4 +12,15 @@ import lombok.NoArgsConstructor;
 public class SubmitResponse {
 
     private String result;
+
+    public SubmitResult changeToEnum() {
+        if (this.result.equals("CORRECT")){
+            return SubmitResult.CORRECT;
+        } else if (this.result.equals("WRONG")){
+            return SubmitResult.WRONG;
+        } else if (this.result.equals("TIMEOUT")){
+            return SubmitResult.TIMEOUT;
+        }
+        return SubmitResult.ERROR;
+    }
 }
