@@ -4,7 +4,11 @@ package com.goojeans.idemainserver.repository.Users;
 import com.goojeans.idemainserver.domain.entity.Users.User;
 import com.goojeans.idemainserver.util.TokenAndLogin.SocialType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -22,5 +26,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * 따라서 추가 정보를 입력받아 회원 가입을 진행할 때 소셜 타입, 식별자로 해당 회원을 찾기 위한 메소드
      */
     Optional<User> findBySocialTypeAndSocialId(SocialType socialType, String socialId);
+
+
+    // 1주일 사이의 같은 CreatedAt을 가진 user의 count를 구하는 메서드 (시작일을 파라미터로 받음)
+    @Query("SELECT FUNCTION('DATE', u.createdAt) as date, COUNT(u) FROM User u WHERE u.createdAt >= :startDate GROUP BY FUNCTION('DATE', u.createdAt)")
+    List<Object[]> countDailyUsersForLastWeek(LocalDateTime  startDate);
 
 }
