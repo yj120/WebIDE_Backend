@@ -71,8 +71,9 @@ public class ExecuteService {
 				if (exitCode != 0) {
 					String errors = runService.fileToString(sourceCodeFileSet.getOutputFile());
 					String replaced = errors.replace(executeAllFileSet.getSourceCodeFile().getAbsolutePath(),s3Key);
+
 					// compile error 발생, 결과 return
-					return ApiResponse.executeOkFrom(replaced);
+					return ApiResponse.okFrom(List.of(ExecuteResponseDto.of(replaced)));
 				} else {
 					excuteExcuteFileSet = ExcuteExcuteFileSet.sourceCodeOf(executeAllFileSet, sourceCodeFileSet);
 				}
@@ -81,17 +82,17 @@ public class ExecuteService {
 			// 파일 실행 및 결과 반환
 			String result = executeFile(fileExtension, excuteExcuteFileSet);
 			String replaced = result.replace(executeAllFileSet.getSourceCodeFile().getAbsolutePath(), s3Key);
-			return ApiResponse.executeOkFrom(replaced);
+			return ApiResponse.okFrom(List.of(ExecuteResponseDto.of(replaced)));
 
 		} catch (Exception e) {
 			log.error("{}", e.getMessage());
-			return ApiResponse.executeServerErrorFrom(e.getMessage());
+			return ApiResponse.serverErrorFrom(e.getMessage());
 		} finally {
 
 			// 모두 지워지지 않았다면, 서버 에러 메시지 출력
 			if (!runService.deleteFolder(folder)) {
 				log.error("모든 File 지우기 실패");
-				return ApiResponse.executeServerErrorFrom("모든 File 지우기 실패");
+				return ApiResponse.serverErrorFrom("모든 File 지우기 실패");
 			}
 		}
 

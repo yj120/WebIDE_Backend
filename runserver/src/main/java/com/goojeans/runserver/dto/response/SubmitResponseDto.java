@@ -14,10 +14,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SubmitResponseDto {
 
-	private String result;
-	private String error;
+	private Answer result;
 
-	public static SubmitResponseDto of(Enum<Answer> type, String error) {
-		return new SubmitResponseDto(type.toString() , error);
+	public static SubmitResponseDto of(Answer type) {
+		return new SubmitResponseDto(type);
 	}
 }
