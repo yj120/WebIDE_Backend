@@ -12,10 +12,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RestSubmitRequest implements RestRequest{
 
-    private String s3Url;
+    private String s3Key;
 
     private Long algorithmId;
 
-    private FileExtension extension;
+    private FileExtension fileExtension;
 
 }

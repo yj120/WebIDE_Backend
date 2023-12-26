@@ -12,12 +12,12 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RestExecuteRequest implements RestRequest{
 
-    private String s3Url;
+    private String s3Key;
 
     private Long algorithmId;
 
     private String testCase;
 
-    private FileExtension extension;
+    private FileExtension fileExtension;
 
 }

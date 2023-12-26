@@ -37,7 +37,7 @@ public class S3Repository {
 
 	private final S3Client s3Client;
 
-	@Value("${cloud.aws.s3.bucket}")
+	@Value("${BUCKET_NAME}")
 	private String bucket;
 	private static final String TESTCASES = "testcases";
 	private static final String ANSWERS = "answers";
@@ -120,7 +120,7 @@ public class S3Repository {
 			}
 
 			// S3에서 해당 문제의 testcase 파일 List 가져오기
-			testCaseFile = stringToFile(directoryPath, testCase);
+			testCaseFile = testStringToFile(directoryPath, testCase);
 
 			// error 저장할 파일 생성
 			errorFile = getBlankFile(directoryPath, "error.txt");
@@ -151,13 +151,18 @@ public class S3Repository {
 	 * @param testCase
 	 * @return File
 	 */
-	private File stringToFile(String directoryPath, String testCase) throws IOException {
+	private File testStringToFile(String directoryPath, String testCase) throws IOException {
 
 		File newFile = new File(directoryPath + "testCase.txt");
 		newFile.createNewFile();
 
 		OutputStream os = new FileOutputStream(newFile);
-		os.write(testCase.getBytes());
+		// null인 경우
+		if(testCase == null) {
+			os.write("".getBytes());
+		} else {
+			os.write(testCase.getBytes());
+		}
 		os.flush();
 		os.close();
 
@@ -251,7 +256,11 @@ public class S3Repository {
 		// 생성한 파일에 내용 쓰기, 내용을 쓰면 자동으로 실제 생성됨.
 		// try-with-resources 대신 close() 사용
 		OutputStream os = new FileOutputStream(file);
-		os.write(data);
+		if(data == null) {
+			os.write("".getBytes());
+		} else {
+			os.write(data);
+		}
 		os.flush();
 		os.close();
 

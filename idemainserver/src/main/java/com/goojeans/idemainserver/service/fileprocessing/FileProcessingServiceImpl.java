@@ -2,12 +2,20 @@ package com.goojeans.idemainserver.service.fileprocessing;
 
 import com.goojeans.idemainserver.domain.dto.request.FileRequests.*;
 import com.goojeans.idemainserver.domain.dto.response.FileResponses.*;
+import com.goojeans.idemainserver.domain.entity.Algorithm;
+import com.goojeans.idemainserver.domain.entity.MemberSolved;
 import com.goojeans.idemainserver.domain.entity.RunCode;
+import com.goojeans.idemainserver.domain.entity.Users.User;
+import com.goojeans.idemainserver.repository.Users.UserRepository;
+import com.goojeans.idemainserver.repository.algorithm.AlgorithmRepository;
 import com.goojeans.idemainserver.repository.fileprocessing.FileProcessRepository;
+import com.goojeans.idemainserver.repository.membersolved.MemberSolvedRepository;
+import com.goojeans.idemainserver.util.SubmitResult;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.BufferedWriter;
@@ -26,6 +34,10 @@ import java.util.UUID;
 public class FileProcessingServiceImpl implements FileProcessService{
 
     private final FileProcessRepository repository;
+    private final MemberSolvedRepository msRepository;
+    private final AlgorithmRepository algorithmRepository;
+    private final UserRepository userRepository;
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     public static String requestUrl = "http://run:8080";
@@ -43,7 +55,9 @@ public class FileProcessingServiceImpl implements FileProcessService{
         } catch (Exception e) {
             return new FileProcessResponse<>(6000, null, e.getMessage());
         } finally {
-            file.delete();
+            if (file != null && file.exists()){
+                file.delete();
+            }
         }
         SourceCodeResponse data = new SourceCodeResponse(sourceCode);
 
@@ -62,7 +76,9 @@ public class FileProcessingServiceImpl implements FileProcessService{
         } catch (Exception e) {
             return new FileProcessResponse<>(6000, null, e.getMessage());
         } finally {
-            file.delete();
+            if (file != null && file.exists()){
+                file.delete();
+            }
         }
 
         AlgorithmResponse data = new AlgorithmResponse(algorithmText);
@@ -75,32 +91,35 @@ public class FileProcessingServiceImpl implements FileProcessService{
         String awsKeyPath = request.getAlgorithmId() + "/" + request.getUserId() + "/" + request.getFilePathSuffix();
 
         RestExecuteRequest executeRequest = RestExecuteRequest.builder()
-                .s3Url(awsKeyPath)
+                .s3Key(awsKeyPath)
                 .algorithmId(request.getAlgorithmId())
                 .testCase(request.getTestCase())
-                .extension(request.getFileExtension())
+                .fileExtension(request.getFileExtension())
                 .build();
 
         FileProcessResponse<ExecuteResponse> response;
+
+
         File uploadFile = null;
 
         try {
             uploadFile = getFile(request.getSourceCode());
+            repository.saveFile(awsKeyPath, uploadFile);
 
             response = restPost(requestUrl + "/execute", executeRequest, ExecuteResponse.class);
 
             if (response.getStatus() != 200) {
+                log.info("run server error={}", response.getError());
                 throw new RuntimeException(response.getError());
             }
-
-            repository.saveFile(awsKeyPath, uploadFile);
-
         } catch (Exception e) {
+            log.info("error={}", e.getStackTrace());
             return new FileProcessResponse<>(6000, null, e.getMessage());
         } finally {
-            uploadFile.delete();
+            if (uploadFile != null && uploadFile.exists()){
+                uploadFile.delete();
+            }
         }
-
         return response;
     }
 
@@ -119,11 +138,12 @@ public class FileProcessingServiceImpl implements FileProcessService{
         }
 
         RestSubmitRequest submitRequest = RestSubmitRequest.builder()
-                .s3Url(awsKeyPath)
+                .s3Key(awsKeyPath)
                 .algorithmId(request.getAlgorithmId())
-                .extension(request.getFileExtension())
+                .fileExtension(request.getFileExtension())
                 .build();
         FileProcessResponse<SubmitResponse> response;
+
         File uploadFile = null;
 
         try {
@@ -135,8 +155,26 @@ public class FileProcessingServiceImpl implements FileProcessService{
                 throw new RuntimeException(response.getError());
             }
 
-            //TODO: add member_solved feature for submit
+            Algorithm algorithm = algorithmRepository.findAlgorithmById(request.getAlgorithmId()).stream()
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("find algorithm"));
 
+            User user = userRepository.findById(request.getUserId()).stream()
+                    .findAny()
+                    .orElseThrow(() -> new RuntimeException("find user"));
+            Boolean result = false;
+
+            if(response.getData().get(0).getResult() == SubmitResult.CORRECT){
+                result = true;
+            }
+
+            MemberSolved ms = MemberSolved.builder()
+                    .algorithm(algorithm)
+                    .user(user)
+                    .solved(result)
+                    .build();
+
+            msRepository.updateMemberSolved(ms);
 
             RunCode updateMetaData = RunCode.builder()
                     .submitResult(response.getData().get(0).getResult())
@@ -150,7 +188,9 @@ public class FileProcessingServiceImpl implements FileProcessService{
             log.error(e.getMessage());
             return new FileProcessResponse<>(6000, null, e.getMessage());
         } finally {
-            uploadFile.delete();
+            if (uploadFile != null && uploadFile.exists()){
+                uploadFile.delete();
+            }
         }
 
         return response;
@@ -235,7 +275,9 @@ public class FileProcessingServiceImpl implements FileProcessService{
             log.error(e.getMessage());
             return new FileProcessResponse<>(6000, null, e.getMessage());
         } finally {
-            file.delete();
+            if (file != null && file.exists()){
+                file.delete();
+            }
         }
     }
 
@@ -245,7 +287,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
         // `FileProcessResponse<T>`의 타입을 지정
         @SuppressWarnings("unchecked")
         Class<FileProcessResponse<T>> responseType = (Class<FileProcessResponse<T>>)(Class<?>)FileProcessResponse.class;
-
+        log.info("test={}", responseDataType);
         // postForObject() 메서드 호출
         return restTemplate.postForObject(url, requestObject, responseType);
     }

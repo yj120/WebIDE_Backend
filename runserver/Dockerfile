@@ -33,7 +33,7 @@ WORKDIR /app
 COPY . .
 
 # 스프링 부트 애플리케이션 빌드
-RUN gradle build
+RUN gradle build --no-daemon --warning-mode=all --scan -x test
 
 # 빌드된 JAR 파일 실행
 CMD ["java", "-jar", "build/libs/runserver-0.0.1-SNAPSHOT.jar"]
