@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 public class Algorithm extends BaseEntity{
 
-    @Id @GeneratedValue(strategy = GenerationType.AUTO)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "algorithm_id")
     private Long algorithmId;
 
