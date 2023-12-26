@@ -1,5 +1,6 @@
 package com.goojeans.idemainserver.repository.algorithm;
 
+import com.goojeans.idemainserver.domain.dto.response.algorithmresponse.AllAlgoResponse;
 import com.goojeans.idemainserver.domain.entity.Algorithm;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
@@ -12,7 +13,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class AlgorithmRepositoryImpl implements AlgorithmRepository{
+public class AlgorithmRepositoryImpl implements AlgorithmRepository {
 
     private final EntityManager em;
 
@@ -32,7 +33,8 @@ public class AlgorithmRepositoryImpl implements AlgorithmRepository{
 
     @Override
     public List<Algorithm> findSolvedAlgorithm(Long userId) {
-        String jpql = "SELECT a FROM Algorithm a LEFT JOIN FETCH a.memberSolves ms ON ms.user.id = :memberId";
+        String jpql = "select a from Algorithm a left join fetch a.memberSolves";
+
         TypedQuery<Algorithm> query = em.createQuery(jpql, Algorithm.class);
 
         return query.getResultList();

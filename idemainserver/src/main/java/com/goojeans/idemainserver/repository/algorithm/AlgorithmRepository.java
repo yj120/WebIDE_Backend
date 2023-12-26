@@ -1,5 +1,6 @@
 package com.goojeans.idemainserver.repository.algorithm;
 
+import com.goojeans.idemainserver.domain.dto.response.algorithmresponse.AllAlgoResponse;
 import com.goojeans.idemainserver.domain.entity.Algorithm;
 
 import java.util.List;
