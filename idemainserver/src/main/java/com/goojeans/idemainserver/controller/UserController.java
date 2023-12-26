@@ -127,12 +127,6 @@ public class UserController {
                                           @RequestParam String city,
                                           HttpServletRequest request){
         ApiResponse apiResponse = new ApiResponse();
-        if(blog.isEmpty() || blog==null){
-            return apiResponse.fail(ErrorCode.MISSING_REQUIRED_INFORMATION.getStatus(),ErrorCode.MISSING_REQUIRED_INFORMATION.getMessage());
-        }
-        if(city.isEmpty() || city==null){
-            return apiResponse.fail(ErrorCode.MISSING_REQUIRED_INFORMATION.getStatus(),ErrorCode.MISSING_REQUIRED_INFORMATION.getMessage());
-        }
         return userService.updateBlogAndAdress(request,blog,city);
     }
 
@@ -151,7 +145,7 @@ public class UserController {
 
 
     // 로그아웃 -> 근데 안쓰일듯? 기본 로그아웃 제공해주는 듯함..
-    @GetMapping("/logout")
+    @GetMapping("/log-out")
     public void authenticatedOnly(HttpServletRequest request,HttpServletResponse response){
         try{
             // main 화면으로 리다이렉트 + 로컬 스토리지에서 토큰삭제

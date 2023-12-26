@@ -11,6 +11,6 @@ import java.util.List;
 @Getter
 @Setter
 public class ErrorResponseDto {
-    private int statusCode;
+    private int status;
     private String Error;
 }
