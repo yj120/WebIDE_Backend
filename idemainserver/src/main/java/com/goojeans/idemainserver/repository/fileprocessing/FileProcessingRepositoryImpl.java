@@ -1,7 +1,6 @@
 package com.goojeans.idemainserver.repository.fileprocessing;
 
 import com.goojeans.idemainserver.domain.dto.response.FileResponses.FileTreeResponse;
-import com.goojeans.idemainserver.domain.entity.Algorithm;
 import com.goojeans.idemainserver.domain.entity.RunCode;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
