@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goojeans.idemainserver.domain.dto.request.TokenAndLogin.PasswordDto;
 import com.goojeans.idemainserver.domain.dto.request.TokenAndLogin.UserSignUpDto;
 import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.*;
+import com.goojeans.idemainserver.domain.entity.Users.User;
 import com.goojeans.idemainserver.repository.Users.UserRepository;
+import com.goojeans.idemainserver.repository.algorithm.S3Repository;
+import com.goojeans.idemainserver.repository.algorithm.S3RepositoryImpl;
 import com.goojeans.idemainserver.service.UserService;
 import com.goojeans.idemainserver.util.TokenAndLogin.ApiException;
 import com.goojeans.idemainserver.util.TokenAndLogin.ApiResponse;
@@ -36,6 +39,7 @@ public class UserController {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final LoginService loginService;
+
 
 
 
@@ -173,4 +177,8 @@ public class UserController {
     }
 
 
+    @GetMapping("/unsubscribe")
+    public ResponseDto<?> unsubscribe(HttpServletRequest request){
+        return userService.unsubscribe(request);
+    }
 }
