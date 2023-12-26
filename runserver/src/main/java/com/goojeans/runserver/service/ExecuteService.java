@@ -3,8 +3,6 @@ package com.goojeans.runserver.service;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,7 +19,6 @@ import com.goojeans.runserver.dto.file.SourceCodeFileSet;
 import com.goojeans.runserver.dto.request.ExecuteRequestDto;
 import com.goojeans.runserver.dto.response.ApiResponse;
 import com.goojeans.runserver.dto.response.ExecuteResponseDto;
-import com.goojeans.runserver.util.Answer;
 import com.goojeans.runserver.util.Extension;
 
 import lombok.RequiredArgsConstructor;
