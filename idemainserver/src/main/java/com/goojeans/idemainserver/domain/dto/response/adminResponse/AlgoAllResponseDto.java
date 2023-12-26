@@ -1,4 +1,4 @@
-package com.goojeans.idemainserver.domain.dto.response.adminResponse;
+package com.goojeans.idemainserver.domain.dto.response.adminresponse;
 
 import java.util.List;
 
@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AlgoAllResponseDto {
 
+	private Long algorithmId;
 	private String algorithmName;
 	private int level;
 	private String tag;
@@ -23,6 +24,7 @@ public class AlgoAllResponseDto {
 
 	public static AlgoAllResponseDto from(Algorithm updateAlgorithm, String description, List<String> testcases, List<String> answers) {
 		return new AlgoAllResponseDto(
+			updateAlgorithm.getAlgorithmId(),
 			updateAlgorithm.getAlgorithmName(),
 			updateAlgorithm.getLevel(),
 			updateAlgorithm.getTag(),

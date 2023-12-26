@@ -1,4 +1,4 @@
-package com.goojeans.idemainserver.domain.dto.request.adminRequest;
+package com.goojeans.idemainserver.domain.dto.request.adminrequest;
 
 import java.util.List;
 
