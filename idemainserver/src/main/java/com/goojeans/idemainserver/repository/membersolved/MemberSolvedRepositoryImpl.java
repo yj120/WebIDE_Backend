@@ -42,6 +42,7 @@ public class MemberSolvedRepositoryImpl implements MemberSolvedRepository {
         }
 
         findSolved.setSolved(update.getSolved());
+        findSolved.setLanguage(update.getLanguage());
 
         return Optional.of(findSolved);
     }
