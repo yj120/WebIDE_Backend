@@ -10,7 +10,7 @@ import java.util.List;
 @Getter
 @Setter
 public class ResponseDto<T> {
-    private int statusCode;
+    private int status;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<T> data;
     @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -204,20 +204,14 @@ public class JwtService {
         Map<String,String> Info= new HashMap<>();
         DecodedJWT decode = JWT.decode(AccessToken);
 
-        String subject = decode.getSubject(); // return : AccessToken
-        String issuer = decode.getIssuer(); // return : null
-        Date expiresAt = decode.getExpiresAt(); // return : Created Token
-
-        String email = decode.getClaim(EMAIL_CLAIM).toString();
-        String nickname = decode.getClaim(NICK_NAME).toString();
-        String Id = decode.getClaim(PRIMARY_KEY).toString();
-
+        String email = decode.getClaim(EMAIL_CLAIM).asString();
+        String nickname = decode.getClaim(NICK_NAME).asString();
+        String Id = decode.getClaim(PRIMARY_KEY).asString();
 
         // test
-        log.info("nickname={}",nickname);
-        log.info("id={}",Id);
-        log.info("email={}",email);
-
+//        log.info("nickname={}",nickname);
+//        log.info("id={}",Id);
+//        log.info("email={}",email);
 
         Info.put("id",Id);
         Info.put("nickname",nickname);
