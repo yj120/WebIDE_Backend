@@ -49,4 +49,11 @@ public class MemberSolvedRepositoryImpl implements MemberSolvedRepository {
 
 		return Optional.of(findSolved);
 	}
+
+	@Override
+	public List<Object[]> countSolvedByLanguage() {
+		String jpql = "SELECT ms.language, COUNT(ms) FROM MemberSolved ms WHERE ms.solved = true GROUP BY ms.language";
+		return em.createQuery(jpql, Object[].class)
+			.getResultList();
+	}
 }
