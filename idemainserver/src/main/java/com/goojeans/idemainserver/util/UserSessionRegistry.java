@@ -25,4 +25,13 @@ public class UserSessionRegistry {
     public int getSize() {
         return userSessions.size();
     }
+
+    public String getSessionId(String nickname) {
+        for (Map.Entry<String, String> entry : userSessions.entrySet()) {
+            if (entry.getValue().equals(nickname)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
 }
