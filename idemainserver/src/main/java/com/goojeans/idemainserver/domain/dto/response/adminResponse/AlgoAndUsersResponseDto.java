@@ -1,6 +1,8 @@
-package com.goojeans.idemainserver.domain.dto.response.adminResponse;
+package com.goojeans.idemainserver.domain.dto.response.adminresponse;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -12,11 +14,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AlgoAndUsersResponseDto {
 
-	List<UserResponseDto> users;
-	List<AlgoShortResponseDto> algos;
+	Map<LocalDate, Long> usersCounts;
+	List<LanguageCountDto> algos;
 
-	public static AlgoAndUsersResponseDto from(List<UserResponseDto> users, List<AlgoShortResponseDto> algos) {
-		return new AlgoAndUsersResponseDto(users, algos);
+	public static AlgoAndUsersResponseDto from(Map<LocalDate, Long>  usersCounts, List<LanguageCountDto> algos) {
+		return new AlgoAndUsersResponseDto(usersCounts, algos);
 	}
 
 }

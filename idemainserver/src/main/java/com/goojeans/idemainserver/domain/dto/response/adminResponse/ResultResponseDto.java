@@ -1,4 +1,4 @@
-package com.goojeans.idemainserver.domain.dto.response.adminResponse;
+package com.goojeans.idemainserver.domain.dto.response.adminresponse;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
