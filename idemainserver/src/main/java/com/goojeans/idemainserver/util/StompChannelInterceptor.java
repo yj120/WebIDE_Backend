@@ -29,9 +29,12 @@ public class StompChannelInterceptor implements ChannelInterceptor {
 
             String sessionId = accessor.getSessionId();
 
-            String authorization = String.valueOf(accessor.getNativeHeader("Authorization"));
-
             //토큰 복호화 후 닉네임 추출
+            String authorization = String.valueOf(accessor.getFirstNativeHeader("Authorization"));
+            if (authorization != null && authorization.startsWith("Bearer ")) {
+                authorization = authorization.replace("Bearer ", "");
+            }
+
             Map<String, String> decode = jwtService.decode(authorization);
             String nickname = decode.get("nickname");
 

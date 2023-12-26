@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RestController
+@RestController // @Controller + @ResponseBody // TODO Rest하다는 것의 의미를 다시 공부하기.
 @RequiredArgsConstructor
 @RequestMapping("/execute")
 public class ExecuteController {
@@ -23,7 +23,7 @@ public class ExecuteController {
 	private final ExecuteService executeService;
 
 	@PostMapping
-	public ApiResponse<ExecuteResponseDto> execute(  @RequestBody @Validated ExecuteRequestDto executeRequestDto) {
+	public ApiResponse<ExecuteResponseDto> execute(@RequestBody @Validated ExecuteRequestDto executeRequestDto) {
 
 		// Error 포함 Response
 		ApiResponse<ExecuteResponseDto> executeResult = executeService.codeJudge(executeRequestDto);

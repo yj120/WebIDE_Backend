@@ -1,6 +1,7 @@
 package com.goojeans.idemainserver.controller.chatController;
 
 import com.goojeans.idemainserver.domain.dto.request.chatRequest.StompRequest;
+import com.goojeans.idemainserver.domain.dto.response.chatResponse.ChatApiResponse;
 import com.goojeans.idemainserver.domain.dto.response.chatResponse.StompNoticeResponse;
 import com.goojeans.idemainserver.domain.dto.response.chatResponse.StompResponse;
 import com.goojeans.idemainserver.service.chatService.ChatService;
@@ -12,6 +13,10 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.NoSuchElementException;
 
@@ -57,30 +62,34 @@ public class ChatStompController {
         } catch (NoSuchElementException e) {
             log.error(e.getMessage());
         }
-
-        log.info("Session count={}", userSessionRegistry.getSize());
     }
 
-    //사용자 퇴장 알림
-    @MessageMapping("/chat/exit/{algorithmId}")
-    public void exit(@DestinationVariable("algorithmId") Long algorithmId, StompHeaderAccessor accessor) {
-
-        String sessionId = accessor.getSessionId();
-        String nickname = userSessionRegistry.getNickname(sessionId);
-
-        String message = nickname + " 님이 퇴장하셨습니다.";
+    /**
+     * 채팅 disconnect 시 퇴장 응답 보내고 저장소에서 유저 정보 지우기
+     */
+    @ResponseBody
+    @GetMapping("/chat/exit/{algorithmId}")
+    public ChatApiResponse<?> disconnectChat(@PathVariable("algorithmId") Long algorithmId, @RequestParam("nickname") String nickname) {
 
         StompNoticeResponse noticeResponse = StompNoticeResponse.builder()
                 .type("EXIT")
                 .nickname(nickname)
-                .content(message)
+                .content(nickname + " 님이 퇴장하셨습니다.")
                 .build();
 
-        simpMessagingTemplate.convertAndSend("/topic/chat/" + algorithmId, noticeResponse);
+        try {
+            String sessionId = userSessionRegistry.getSessionId(nickname);
+            userSessionRegistry.removeUser(sessionId);
+            simpMessagingTemplate.convertAndSend("/topic/chat/" + algorithmId, noticeResponse);
+            log.info("remove nickname={}", nickname);
 
-        userSessionRegistry.removeUser(sessionId);
+            return new ChatApiResponse<>(null);
 
-        log.info("Session count={}", userSessionRegistry.getSize());
+        } catch (Exception e) {
+
+            log.info("userSessionRegistry 에서 해당 사용자를 찾을 수 없습니다.");
+            return new ChatApiResponse<>(4006, "해당 사용자가 존재하지 않습니다.");
+        }
+
     }
-
 }
