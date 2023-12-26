@@ -15,7 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.goojeans.idemainserver.domain.dto.response.adminResponse.UserResponseDto;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.UserResponseDto;
 import com.goojeans.idemainserver.domain.entity.Users.User;
 import com.goojeans.idemainserver.repository.Users.UserRepository;
 import com.goojeans.idemainserver.util.TokenAndLogin.Role;
@@ -87,10 +87,10 @@ class AdminUserServiceTest {
 		// when(service.getUser(1L)).thenReturn(UserResponseDto.of(fakeUser));
 
 		// when
-		UserResponseDto user1 = service.getUser(fakeUser.getId());
+		UserResponseDto user = service.getUser(fakeUser.getId());
 
 		// then
-		assertThat(fakeUser.getEmail()).isEqualTo(user1.getEmail());
+		assertThat(fakeUser.getEmail()).isEqualTo(user.getEmail());
 
 	}
 
@@ -130,11 +130,10 @@ class AdminUserServiceTest {
 		// repository의 delete가 void를 반환하기 때문에 repository mocking을 안 해도 되지 않나 하는 추측 by 범석
 
 		// when
-		UserResponseDto deletedUser = service.deleteUser(fakeUser.getId());
+		service.deleteUser(fakeUser.getId());
 
 		// then
 		verify(userRepository, times(1)).deleteById(1L);
-		assertThat(deletedUser).isNull();
 
 	}
 }
