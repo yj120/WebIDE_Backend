@@ -10,14 +10,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public enum Answer {
 
-	CORRECT("correct"),
-	WRONG("wrong"),
-	TIMEOUT("timeout"),
-	ERROR("error");
-
-	private String answer;
-
-	public Answer from(String answer) {
-		return Answer.valueOf(answer.toUpperCase());
-	}
+	CORRECT, WRONG, TIMEOUT, ERROR;
+	// CORRECT("correct"),
+	// WRONG("wrong"),
+	// TIMEOUT("timeout"),
+	// ERROR("error");
+	//
+	// private String answer;
+	//
+	// public Answer from(String answer) {
+	// 	return Answer.valueOf(answer.toUpperCase());
+	// }
 }
