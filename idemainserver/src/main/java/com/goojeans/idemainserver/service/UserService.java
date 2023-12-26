@@ -5,6 +5,7 @@ import com.goojeans.idemainserver.domain.dto.request.TokenAndLogin.UserSignUpDto
 import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.*;
 import com.goojeans.idemainserver.domain.entity.Users.User;
 import com.goojeans.idemainserver.repository.Users.UserRepository;
+import com.goojeans.idemainserver.repository.algorithm.S3RepositoryImpl;
 import com.goojeans.idemainserver.util.TokenAndLogin.ApiException;
 import com.goojeans.idemainserver.util.TokenAndLogin.ApiResponse;
 import com.goojeans.idemainserver.util.TokenAndLogin.ErrorCode;
@@ -28,6 +29,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final S3RepositoryImpl s3Repository;
 
 
     public void signUp(UserSignUpDto userSignUpDto) throws ApiException {
@@ -185,8 +187,32 @@ public class UserService {
     }
 
 
-    public void deleteMemberById(Long id) {
-        userRepository.deleteById(id); // 이메일을 기준으로 삭제
+    // 계정 삭제
+    public ResponseDto<ResponseDataDto> unsubscribe(HttpServletRequest request){
+        ApiResponse apiResponse = new ApiResponse();
+        Optional<String> extractedToken = jwtService.extractAccessToken(request);
+        if(extractedToken.isPresent()){
+            String token = extractedToken.get();
+            Optional<String> extractEmail = jwtService.extractEmail(token);
+            String email = extractEmail.get();
+            Optional<User> OptionalUser = userRepository.findByEmail(email);
+            User user = OptionalUser.get();
+
+            // db 에서 삭제
+            userRepository.deleteById(user.getId());
+
+            // 3s bucket 에서 삭제
+            try{
+                s3Repository.deleteAlgosByUserId(user.getId());
+            }catch (Exception e){
+                log.error("파일이 없음");
+                //return apiResponse.fail(ErrorCode.NOT_FOUND.getStatus(), "Empty "+ErrorCode.NOT_FOUND.getMessage());
+            }
+
+        }else{
+            apiResponse.fail(ErrorCode.INTERNAL_SERVER_ERROR.getStatus(), ErrorCode.OK.getMessage());
+        }
+        return apiResponse.ok(ErrorCode.OK.getStatus(),ErrorCode.OK.getMessage());
     }
 
 
