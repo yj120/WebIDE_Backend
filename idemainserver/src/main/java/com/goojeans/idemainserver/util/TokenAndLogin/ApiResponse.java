@@ -14,7 +14,7 @@ public class ApiResponse {
     // 실패 했을 때 응답 생성
     public ResponseDto fail(int code, String message){
         ResponseDto responseDto = new ResponseDto();
-        responseDto.setStatusCode(code);
+        responseDto.setStatus(code);
         responseDto.setError(message);
         return responseDto;
     }
@@ -26,7 +26,7 @@ public class ApiResponse {
         responseDataDto.setMessage(message);
         List<ResponseDataDto> data= new ArrayList<>();
         data.add(responseDataDto);
-        responseDto.setStatusCode(code);
+        responseDto.setStatus(code);
         responseDto.setData(data);
         return responseDto;
     }
@@ -38,7 +38,7 @@ public class ApiResponse {
         List<UserInfoDto> data = new ArrayList<>();
         data.add(userdata);
         responseDto.setData(data);
-        responseDto.setStatusCode(ErrorCode.OK.getStatus());
+        responseDto.setStatus(ErrorCode.OK.getStatus());
         return responseDto;
     }
 
@@ -48,7 +48,7 @@ public class ApiResponse {
         List<UserBioAndAdressDto> data = new ArrayList<>();
         data.add(userdata);
         responseDto.setData(data);
-        responseDto.setStatusCode(ErrorCode.OK.getStatus());
+        responseDto.setStatus(ErrorCode.OK.getStatus());
         return responseDto;
     }
 
@@ -58,7 +58,7 @@ public class ApiResponse {
         List<OAuthUserInfoDto> data = new ArrayList<>();
         data.add(userdata);
         responseDto.setData(data);
-        responseDto.setStatusCode(ErrorCode.OK.getStatus());
+        responseDto.setStatus(ErrorCode.OK.getStatus());
         return responseDto;
     }
 
