@@ -8,6 +8,10 @@ import java.util.Optional;
 
 public interface AlgorithmRepository {
 
+    public Algorithm saveAlgorithm(Algorithm algorithm);
+
+    public void deleteById(Long id);
+
     public Optional<Algorithm> findAlgorithmById(Long algorithmId);
 
     public List<Algorithm> findAllAlgorithm();
