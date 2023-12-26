@@ -10,6 +10,8 @@ import com.goojeans.idemainserver.repository.Users.UserRepository;
 import com.goojeans.idemainserver.repository.algorithm.AlgorithmRepository;
 import com.goojeans.idemainserver.repository.fileprocessing.FileProcessRepository;
 import com.goojeans.idemainserver.repository.membersolved.MemberSolvedRepository;
+import com.goojeans.idemainserver.util.FileExtension;
+import com.goojeans.idemainserver.util.Language;
 import com.goojeans.idemainserver.util.SubmitResult;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -162,6 +164,12 @@ public class FileProcessingServiceImpl implements FileProcessService{
                     .findAny()
                     .orElseThrow(() -> new RuntimeException("find user"));
             Boolean result = false;
+            Language language = Language.Python;
+            if (request.getFileExtension() == FileExtension.CPP){
+                language = Language.Cpp;
+            } else if(request.getFileExtension() == FileExtension.JAVA){
+                language = Language.Java;
+            }
 
             if(response.getData().get(0).getResult() == SubmitResult.CORRECT){
                 result = true;
@@ -171,6 +179,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
                     .algorithm(algorithm)
                     .user(user)
                     .solved(result)
+                    .language(language)
                     .build();
 
             msRepository.updateMemberSolved(ms);

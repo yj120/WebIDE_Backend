@@ -39,6 +39,7 @@ public class AlgorithmListServiceImpl implements AlgorithmListService{
                 for (MemberSolved ms : algorithm.getMemberSolves()) {
                     if(ms.getUser().getId() == userId){
                         algoResponse.setSolved(ms.getSolved());
+                        algoResponse.setLanguage(ms.getLanguage());
                         break;
                     }
                 }

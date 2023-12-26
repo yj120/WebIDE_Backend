@@ -20,5 +20,6 @@ public class AllAlgoResponse {
     private String tag;
     private Integer level;
     private Boolean solved;
+    private Language language;
 
 }
