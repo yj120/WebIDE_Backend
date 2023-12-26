@@ -13,7 +13,7 @@ public enum Answer {
 	CORRECT("correct"),
 	WRONG("wrong"),
 	TIMEOUT("timeout"),
-	SERVER_ERROR("error");
+	ERROR("error");
 
 	private String answer;
 
