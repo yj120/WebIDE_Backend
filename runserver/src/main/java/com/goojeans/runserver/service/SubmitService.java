@@ -53,12 +53,10 @@ public class SubmitService {
 
 			// ANSWER, TESTCASES 없는 경우, 수가 다른 경우 ERROR 처리 (Server Error)
 			if (submitAllFilesSet.getAnswers().isEmpty() | submitAllFilesSet.getTestcases().isEmpty()) {
-				log.error("TESTCASES, ANSWERS가 없음.");
-				return ApiResponse.submitServerErrorFrom(Answer.SERVER_ERROR, "TESTCASES, ANSWERS가 없음.");
+				return ApiResponse.serverErrorFrom( "TESTCASES, ANSWERS가 없음.");
 			}
 			if (submitAllFilesSet.getAnswers().size() != submitAllFilesSet.getTestcases().size()) {
-				log.error("TESTCASES, ANSWERS 수가 다름");
-				return ApiResponse.submitServerErrorFrom(Answer.SERVER_ERROR, "TESTCASES, ANSWERS 수가 다름");
+				return ApiResponse.serverErrorFrom("TESTCASES, ANSWERS 수가 다름");
 			}
 
 			// compile 진행
@@ -75,7 +73,9 @@ public class SubmitService {
 				int exitCode = runService.compileSourceCodeFile(fileExtension, sourceCodeFileSet);
 				if (exitCode != 0) {
 					// compile error 발생, 결과 return
-					return ApiResponse.submitOkFrom(Answer.WRONG);
+					return ApiResponse.okFrom(List.of(
+						SubmitResponseDto.of(Answer.ERROR)
+					));
 				} else {
 					submitExecuteFileSet = SubmitExecuteFileSet.sourceCodeOf(submitAllFilesSet, sourceCodeFileSet);
 				}
@@ -87,12 +87,11 @@ public class SubmitService {
 
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			return ApiResponse.submitServerErrorFrom(Answer.SERVER_ERROR, e.getMessage());
+			return ApiResponse.serverErrorFrom( e.getMessage());
 		} finally {
 			// 모두 지워지지 않았다면, 서버 에러 메시지 출력
 			if (!runService.deleteFolder(folder)) {
-				log.error("모든 File 지우기 실패");
-				return ApiResponse.submitServerErrorFrom(Answer.SERVER_ERROR, "모든 File 지우기 실패");
+				return ApiResponse.serverErrorFrom("모든 File 지우기 실패");
 			}
 		}
 
@@ -114,7 +113,7 @@ public class SubmitService {
 		String[] cmd = runService.getCmd(fileExtension, submitExecuteFileSet.getExcuteFile().getPath());
 		// 정답과 비교 후 결과 return
 		Answer result = isCorrect(submitExecuteFileSet, cmd);
-		return ApiResponse.submitOkFrom(result); // ServerError 발생 X
+		return ApiResponse.okFrom(List.of(SubmitResponseDto.of(result))); // ServerError 발생 X
 	}
 
 	/*
@@ -159,7 +158,7 @@ public class SubmitService {
 			// runtime error
 			int exitCode = process.exitValue();
 			if (exitCode != 0) {
-				return Answer.WRONG;
+				return Answer.ERROR;
 			}
 
 			// 정답 파일과 출력 파일 비교 - 그냥 틀림
