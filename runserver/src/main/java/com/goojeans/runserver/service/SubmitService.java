@@ -86,6 +86,7 @@ public class SubmitService {
 				submitExecuteFileSet);
 
 		} catch (Exception e) {
+			log.error(e.getMessage());
 			return ApiResponse.submitServerErrorFrom(Answer.SERVER_ERROR, e.getMessage());
 		} finally {
 			// 모두 지워지지 않았다면, 서버 에러 메시지 출력
