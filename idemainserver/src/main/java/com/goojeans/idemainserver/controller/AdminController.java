@@ -1,9 +1,12 @@
 package com.goojeans.idemainserver.controller;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,12 +15,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.goojeans.idemainserver.domain.dto.request.adminRequest.AlgoCreateRequestDto;
-import com.goojeans.idemainserver.domain.dto.request.adminRequest.AlgoModifyRequestDto;
-import com.goojeans.idemainserver.domain.dto.response.adminResponse.AlgoShortResponseDto;
-import com.goojeans.idemainserver.domain.dto.response.adminResponse.AlgoAndUsersResponseDto;
-import com.goojeans.idemainserver.domain.dto.response.adminResponse.ApiResponse;
-import com.goojeans.idemainserver.domain.dto.response.adminResponse.UserResponseDto;
+import com.goojeans.idemainserver.domain.dto.request.adminrequest.AlgoCreateRequestDto;
+import com.goojeans.idemainserver.domain.dto.request.adminrequest.AlgoModifyRequestDto;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.AlgoAllResponseDto;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.AlgoShortResponseDto;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.AlgoAndUsersResponseDto;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.ApiResponse;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.LanguageCountDto;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.ResultResponseDto;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.UserResponseDto;
 import com.goojeans.idemainserver.service.admin.AdminAlgorithmService;
 import com.goojeans.idemainserver.service.admin.AdminUserService;
 
@@ -33,97 +39,111 @@ public class AdminController {
 	private final AdminUserService adminUserService;
 	private final AdminAlgorithmService adminAlgorithmService;
 
-	// TODO: "/admin/"이 맞는지, 그냥 "/admin"이 맞는지
-	@GetMapping("/")
-	public ApiResponse<AlgoAndUsersResponseDto> adminHome() {
+	@ExceptionHandler(Exception.class)
+	public ApiResponse<Void> exceptionHandler(Exception e) {
+		return ApiResponse.serverError(e.getMessage());
+	}
+
+	@GetMapping
+	public ApiResponse<List<AlgoAndUsersResponseDto>> adminHome() {
 		try {
-			List<UserResponseDto> allUsers = adminUserService.getAllUsers();
-			List<AlgoShortResponseDto> AllAlgos = adminAlgorithmService.findAll();
-			return ApiResponse.usersAndAlgosOk(allUsers, AllAlgos);
+
+			// 그날 기준 7일 (20~26) 가입한 유저 숫자.
+			Map<LocalDate, Long> countDailyRegistrationsForLastWeek = adminUserService.countDailyRegistrationsForLastWeek();
+
+			// Solved true인 경우, 각 Language 총합
+			List<LanguageCountDto> languageSolvedCounts = adminAlgorithmService.getLanguageSolvedCounts();
+
+			return ApiResponse.okWithData(List.of(
+				AlgoAndUsersResponseDto.from(countDailyRegistrationsForLastWeek, languageSolvedCounts)));
+
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			return ApiResponse.serverError("admin main page에서 get 시 오류");
+			throw new RuntimeException(e);
 		}
 	}
 
-	// TODO ApiResponse<UserResponseDto> 이렇게 하면 serverError 형식을 못 잡겠지?
 	@GetMapping("/user")
-	public ApiResponse getAdminUsersAll() {
-
+	public ApiResponse<List<UserResponseDto>> getAdminUsersAll() {
 		try {
-			return ApiResponse.userAllOk(adminUserService.getAllUsers());
+			return ApiResponse.okWithData(adminUserService.getAllUsers());
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			return ApiResponse.serverError("admin에서 user get 시 오류");
+			throw new RuntimeException("admin에서 user get 시 오류");
 		}
 	}
 
-	// TODO ApiResponse<ResultResponseDto> 이렇게 하면 serverError 형식을 못 잡겠지?
 	@DeleteMapping("/user/{userId}")
-	public ApiResponse deleteUser(@PathVariable Long userId) {
+	public ApiResponse<List<ResultResponseDto>> deleteUser(@PathVariable Long userId) {
 		try {
 			adminUserService.deleteUser(userId);
-			return ApiResponse.ok();
+			return ApiResponse.okWithData(List.of(ResultResponseDto.ok()));
 		} catch (NoSuchElementException e) {
 			log.error(e.getMessage());
-			return ApiResponse.serverError("해당 유저가 존재하지 않습니다.");
+			throw new RuntimeException("admin에서 user delete 시도, 해당 유저가 존재하지 않습니다.");
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			return ApiResponse.serverError("admin에서 user delete 시 오류");
+			throw new RuntimeException("admin에서 user delete 시 오류");
 		}
 	}
 
-	// TODO ApiResponse<AlgoAllResponseDto> 이렇게 하면 serverError 형식을 못 잡겠지?
 	@GetMapping("/algorithm")
-	public ApiResponse getAdminAlgosAll() {
+	public ApiResponse<List<AlgoShortResponseDto>> getAdminAlgosAll() {
 		try {
-			return ApiResponse.algoAllOk(adminAlgorithmService.findAll());
+			return ApiResponse.okWithData(adminAlgorithmService.findAll());
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			return ApiResponse.serverError("admin에서 algorithm get 시 오류");
+			throw new RuntimeException("admin에서 algorithm get 시 오류");
 		}
 	}
 
+	@PostMapping("/algorithm/add")
+	public ApiResponse<List<ResultResponseDto>> createAlgorithm(@RequestBody AlgoCreateRequestDto requestDto) {
 
-	// TODO ApiResponse<ResultResponseDto> 이렇게 하면 serverError 형식을 못 잡겠지?
-	@PostMapping("/algorithm/addalgo")
-	public ApiResponse createAlgorithm(@RequestBody AlgoCreateRequestDto requestDto) {
-		// TODO S3에 저장하는 로직 추가
 		try {
 			adminAlgorithmService.save(requestDto);
-			return ApiResponse.ok();
+			return ApiResponse.okWithData(List.of(ResultResponseDto.ok()));
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			return ApiResponse.serverError("admin에서 algorithm 문제 생성 시 오류");
+			throw new RuntimeException("admin에서 algorithm 문제 생성 시 오류");
 		}
 	}
 
-	// TODO ApiResponse<ResultResponseDto> 이렇게 하면 serverError 형식을 못 잡겠지?
+	@GetMapping("/algorithm/{algorithmId}")
+	public ApiResponse<List<AlgoAllResponseDto>> getAlgorithm(@PathVariable Long algorithmId) {
+
+		try {
+			List<AlgoAllResponseDto> algoAllResponseDtoList = adminAlgorithmService.findById(algorithmId);
+			return ApiResponse.okWithData(algoAllResponseDtoList);
+		} catch (Exception e) {
+			log.error(e.getMessage());
+			throw new RuntimeException("admin에서 algorithm 문제 수정 시 오류");
+		}
+	}
+
 	@PatchMapping("/algorithm/{algorithmId}")
-	public ApiResponse updateAlgorithm(@PathVariable Long algorithmId, @RequestBody AlgoModifyRequestDto requestDto) {
-		// TODO S3 로직 추가
+	public ApiResponse<List<ResultResponseDto>> updateAlgorithm(@PathVariable Long algorithmId,
+		@RequestBody AlgoModifyRequestDto requestDto) {
+
 		try {
 			adminAlgorithmService.update(algorithmId, requestDto);
-			return ApiResponse.ok();
+			return ApiResponse.okWithData(List.of(ResultResponseDto.ok()));
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			return ApiResponse.serverError("admin에서 algorithm 문제 수정 시 오류");
+			throw new RuntimeException("admin에서 algorithm 문제 수정 시 오류");
 		}
 	}
 
-	// TODO ApiResponse<ResultResponseDto> 이렇게 하면 serverError 형식을 못 잡겠지?
 	@DeleteMapping("/algorithm/{algorithmId}")
-	public ApiResponse deleteAlgorithm(@PathVariable Long algorithmId) {
-		// TODO S3 로직 추가
+	public ApiResponse<List<ResultResponseDto>> deleteAlgorithm(@PathVariable Long algorithmId) {
+
 		try {
-			if(!adminAlgorithmService.delete(algorithmId)) {
-				return ApiResponse.serverError("해당 알고리즘 문제가 존재하지 않습니다.");
-			}else{
-				return ApiResponse.ok();
-			}
+			adminAlgorithmService.deleteById(algorithmId);
+			return ApiResponse.okWithData(List.of(ResultResponseDto.ok()));
+
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			return ApiResponse.serverError("admin에서 algorithm 문제 삭제 시 오류");
+			throw new NoSuchElementException(e);
 		}
 	}
 

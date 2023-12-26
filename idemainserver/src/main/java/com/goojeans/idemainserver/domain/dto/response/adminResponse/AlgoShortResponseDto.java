@@ -1,4 +1,4 @@
-package com.goojeans.idemainserver.domain.dto.response.adminResponse;
+package com.goojeans.idemainserver.domain.dto.response.adminresponse;
 
 import com.goojeans.idemainserver.domain.entity.Algorithm;
 
@@ -12,12 +12,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AlgoShortResponseDto {
 
+	private Long algorithmId;
 	private String algorithmName;
 	private int level;
 	private String tag;
 
 	public static AlgoShortResponseDto from(Algorithm algorithm) {
 		return new AlgoShortResponseDto(
+			algorithm.getAlgorithmId(),
 			algorithm.getAlgorithmName(),
 			algorithm.getLevel(),
 			algorithm.getTag()

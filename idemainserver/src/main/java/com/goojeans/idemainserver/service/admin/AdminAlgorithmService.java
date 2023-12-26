@@ -4,12 +4,16 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.goojeans.idemainserver.domain.dto.request.adminRequest.AlgoCreateRequestDto;
-import com.goojeans.idemainserver.domain.dto.request.adminRequest.AlgoModifyRequestDto;
-import com.goojeans.idemainserver.domain.dto.response.adminResponse.AlgoShortResponseDto;
-import com.goojeans.idemainserver.domain.dto.response.adminResponse.AlgoAllResponseDto;
+import com.goojeans.idemainserver.domain.dto.request.adminrequest.AlgoCreateRequestDto;
+import com.goojeans.idemainserver.domain.dto.request.adminrequest.AlgoModifyRequestDto;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.AlgoShortResponseDto;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.AlgoAllResponseDto;
+import com.goojeans.idemainserver.domain.dto.response.adminresponse.LanguageCountDto;
 import com.goojeans.idemainserver.domain.entity.Algorithm;
+import com.goojeans.idemainserver.repository.algorithm.S3Repository;
 import com.goojeans.idemainserver.repository.algorithm.AlgorithmRepository;
+import com.goojeans.idemainserver.repository.membersolved.MemberSolvedRepository;
+import com.goojeans.idemainserver.util.Language;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,17 +26,38 @@ import lombok.extern.slf4j.Slf4j;
 public class AdminAlgorithmService {
 
 	private final AlgorithmRepository algorithmRepository;
+	private final MemberSolvedRepository memberSolvedRepository;
+	private final S3Repository s3Repository;
 
-	// TODO: test할 수 있는 것과 없는 것이 있음.
-	// 제어할 수 있는 것 / 제어할 수 없는 것
-	// 제어할 수 없는 것: random 메서드, 외부 API 호출 (non testable method), 시간에 따라 결과가 달라지는 것
-	// method를 조금 수정하면 non-testable method를 testable method로 바꿀 수 있음.
-	// random: random 생성을 외부에서 생성하고, 파라미터로 넣어주는 형식으로 바꾼다면, 테스트 가능. 프로그램 전체에서는 random 유지, testable까지!!!
-	// 외부 API 호출  -> 눈으로 확인하는 테스트를 짜고 평소에는 @Disabled로 끄고, 필요할 때만 테스트를 켜서 돌린다.
+	public List<LanguageCountDto> getLanguageSolvedCounts() {
 
-	public AlgoAllResponseDto save(AlgoCreateRequestDto requestDto) {
+		List<Object[]> results = memberSolvedRepository.countSolvedByLanguage();
 
-		// TODO: List<MemberSolved> memberSolved = new ArrayList<>(); 이렇게 넣어줘야 하나?
+		int total = 0;
+		int java = 0;
+		int python3 = 0;
+		int cpp = 0;
+
+		for (Object[] result : results) {
+			String language = result[0].toString();
+			int count = ((Long)result[1]).intValue();
+			if (language.equals(Language.Java.toString())) {
+				java = count;
+			} else if (language.equals(Language.Python.toString())) {
+				python3 = count;
+			} else if (language.equals(Language.Cpp.toString())) {
+				cpp = count;
+			}
+
+			total += count;
+		}
+
+		return List.of(LanguageCountDto.of(java, python3, cpp, total));
+	}
+
+	public List<AlgoAllResponseDto> save(AlgoCreateRequestDto requestDto) {
+
+		// DB - name, tag, level 저장.
 		Algorithm algorithmEntity = Algorithm.builder()
 			.algorithmName(requestDto.getAlgorithmName())
 			.tag(requestDto.getTag())
@@ -40,46 +65,82 @@ public class AdminAlgorithmService {
 			.build();
 		Algorithm savedAlgorithm = algorithmRepository.saveAlgorithm(algorithmEntity);
 
-		// TODO: description, testcases, answers - S3에 저장
+		// S3에 저장 - description, testcases, answers -
+		Long algorithmId = algorithmEntity.getAlgorithmId();
 
+		String description = requestDto.getDescription();
+		String descriptionPath = algorithmId + "/algorithm.txt";
+		s3Repository.uploadString(descriptionPath, description);
 
+		List<String> testcases = requestDto.getTestcases();
+		List<String> answers = requestDto.getAnswers();
+		int cnt = 1;
+		for (int i = 0; i < testcases.size(); i++) {
+			String testcasePath = algorithmId + "/testcases/testcase" + (cnt) + ".txt";
+			s3Repository.uploadString(testcasePath, testcases.get(i));
 
-		return AlgoAllResponseDto.from(savedAlgorithm, requestDto.getDescription(), requestDto.getTestcases(),
-			requestDto.getAnswers());
+			String answerPath = algorithmId + "/answers/answer" + (cnt++) + ".txt";
+			s3Repository.uploadString(answerPath, answers.get(i));
+
+		}
+
+		return List.of(AlgoAllResponseDto.from(savedAlgorithm, requestDto.getDescription(), requestDto.getTestcases(),
+			requestDto.getAnswers()));
 	}
 
-	public AlgoAllResponseDto update(Long id, AlgoModifyRequestDto requestDto) {
+	public List<AlgoAllResponseDto> update(Long id, AlgoModifyRequestDto requestDto) {
 
-		// Algorithm entity를 id로 찾아옴.
+		// DB - name, tag, level 수정.
 		Algorithm algorithmEntity = algorithmRepository.findAlgorithmById(id)
 			.orElseThrow(() -> new IllegalArgumentException("해당 알고리즘 문제가 존재하지 않습니다."));
-
-		// Algorithm entity에 name, tag, level 수정.
 		Algorithm updateAlgorithm = algorithmEntity.updateAlgorithm(
 			requestDto.getAlgorithmName(),
 			requestDto.getTag(),
 			requestDto.getLevel()
 		);
 
-		// TODO description, testcases, answers - S3에 저장
-		// Link로 조립하고 AWS S3에서 받아오는데.... File 로 받아와서 String으로 변환 -> List<String>으로 변환
+		// S3 - update(==저장) - description, testcases, answers
+		Long algorithmId = algorithmEntity.getAlgorithmId();
 
-		return AlgoAllResponseDto.from(updateAlgorithm, requestDto.getDescription(), requestDto.getTestcases(),
-			requestDto.getAnswers());
+		String description = requestDto.getDescription();
+		String descriptionPath = algorithmId + "/algorithm.txt";
+		s3Repository.uploadString(descriptionPath, description);
+
+		List<String> testcases = requestDto.getTestcases();
+		List<String> answers = requestDto.getAnswers();
+		int cnt = 1;
+		for (int i = 0; i < testcases.size(); i++) {
+			String testcasePath = algorithmId + "/testcases/testcase" + (cnt) + ".txt";
+			s3Repository.uploadString(testcasePath, testcases.get(i));
+
+			String answerPath = algorithmId + "/answers/answer" + (cnt++) + ".txt";
+			s3Repository.uploadString(answerPath, answers.get(i));
+
+		}
+
+		return List.of(AlgoAllResponseDto.from(updateAlgorithm, requestDto.getDescription(), requestDto.getTestcases(),
+			requestDto.getAnswers()));
 	}
 
-	public boolean delete(Long id) {
+	public void deleteById(Long id) {
 
 		try {
+
+			// DB에서 삭제
 			algorithmRepository.deleteById(id);
-			return true;
+
+			// S3에서 삭제
+			s3Repository.deleteAlgosByAlgoId(id);
+
 		} catch (IllegalArgumentException e) {
-			log.error("해당 알고리즘 문제가 존재하지 않습니다.");
 			log.error(e.getMessage());
-			return false;
+			throw new IllegalArgumentException(e);
 		}
 	}
 
+	/*
+	 * DB에 있는 정보만 내려 주기
+	 */
 	public List<AlgoShortResponseDto> findAll() {
 		return algorithmRepository.findAllAlgorithm()
 			.stream()
@@ -87,4 +148,22 @@ public class AdminAlgorithmService {
 			.toList();
 	}
 
+	public List<AlgoAllResponseDto> findById(Long algorithmId) {
+
+		// DB에서 찾기
+		Algorithm algorithmEntity = algorithmRepository.findAlgorithmById(algorithmId)
+			.orElseThrow(() -> new IllegalArgumentException("해당 알고리즘 문제가 존재하지 않습니다."));
+
+		// description, testcases, answers - S3에서 받아오기
+		String descriptionPath = algorithmId + "/algorithm.txt";
+		String description = s3Repository.getObjectAsString(descriptionPath);
+
+		List<String> testcases = s3Repository.getObjectsAsStringList(algorithmId + "/testcases");
+
+		List<String> answers = s3Repository.getObjectsAsStringList(algorithmId + "/answers");
+
+		return List.of(AlgoAllResponseDto.from(algorithmEntity,
+			description, testcases, answers));
+
+	}
 }
