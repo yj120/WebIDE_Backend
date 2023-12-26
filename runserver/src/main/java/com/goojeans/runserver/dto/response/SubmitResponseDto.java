@@ -1,7 +1,7 @@
 package com.goojeans.runserver.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.goojeans.runserver.util.Answer;
+import com.goojeans.runserver.util.SubmitResult;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -14,9 +14,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SubmitResponseDto {
 
-	private Answer result;
+	private SubmitResult result;
 
-	public static SubmitResponseDto of(Answer type) {
+	public static SubmitResponseDto of(SubmitResult type) {
 		return new SubmitResponseDto(type);
 	}
 }

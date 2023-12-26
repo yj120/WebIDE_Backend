@@ -18,7 +18,7 @@ import com.goojeans.runserver.dto.file.SubmitExecuteFileSet;
 import com.goojeans.runserver.dto.request.SubmitRequestDto;
 import com.goojeans.runserver.dto.response.ApiResponse;
 import com.goojeans.runserver.dto.response.SubmitResponseDto;
-import com.goojeans.runserver.util.Answer;
+import com.goojeans.runserver.util.SubmitResult;
 import com.goojeans.runserver.util.Extension;
 
 import lombok.RequiredArgsConstructor;
@@ -74,7 +74,7 @@ public class SubmitService {
 				if (exitCode != 0) {
 					// compile error 발생, 결과 return
 					return ApiResponse.okFrom(List.of(
-						SubmitResponseDto.of(Answer.ERROR)
+						SubmitResponseDto.of(SubmitResult.ERROR)
 					));
 				} else {
 					submitExecuteFileSet = SubmitExecuteFileSet.sourceCodeOf(submitAllFilesSet, sourceCodeFileSet);
@@ -112,7 +112,7 @@ public class SubmitService {
 		// 각 언어 별 cmd 얻기
 		String[] cmd = runService.getCmd(fileExtension, submitExecuteFileSet.getExcuteFile().getPath());
 		// 정답과 비교 후 결과 return
-		Answer result = isCorrect(submitExecuteFileSet, cmd);
+		SubmitResult result = isCorrect(submitExecuteFileSet, cmd);
 		return ApiResponse.okFrom(List.of(SubmitResponseDto.of(result))); // ServerError 발생 X
 	}
 
@@ -123,7 +123,7 @@ public class SubmitService {
 	 * @param command
 	 * @return Answer
 	 */
-	public Answer isCorrect(SubmitExecuteFileSet submitExecuteFileSet, String... command) throws
+	public SubmitResult isCorrect(SubmitExecuteFileSet submitExecuteFileSet, String... command) throws
 		IOException,
 		InterruptedException {
 
@@ -152,23 +152,23 @@ public class SubmitService {
 			if (!runService.isTimeOut(process, 10)) {
 				// errorFile에 "컴파일 시간 초과" 수기 출력
 				writer.write("런타임 시간 초과");
-				return Answer.TIMEOUT;
+				return SubmitResult.TIMEOUT;
 			}
 
 			// runtime error
 			int exitCode = process.exitValue();
 			if (exitCode != 0) {
-				return Answer.ERROR;
+				return SubmitResult.ERROR;
 			}
 
 			// 정답 파일과 출력 파일 비교 - 그냥 틀림
 			if (!compareToAnswer(outputFile, answer)) {
-				return Answer.WRONG;
+				return SubmitResult.WRONG;
 			}
 
 		}
 
-		return Answer.CORRECT;
+		return SubmitResult.CORRECT;
 	}
 
 	/*
