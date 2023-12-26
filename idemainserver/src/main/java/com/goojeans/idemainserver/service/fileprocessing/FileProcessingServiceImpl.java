@@ -149,6 +149,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
 
         try {
             uploadFile = getFile(request.getSourceCode());
+            repository.saveFile(awsKeyPath, uploadFile);
 
             response = restPost(requestUrl + "/submit", submitRequest, SubmitResponse.class);
 
@@ -190,7 +191,6 @@ public class FileProcessingServiceImpl implements FileProcessService{
                     .build();
 
             repository.saveMetaData(updateMetaData);
-            repository.saveFile(awsKeyPath, uploadFile);
 
         } catch (Exception e) {
             log.error(e.getMessage());
