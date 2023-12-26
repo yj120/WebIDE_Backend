@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SubmitResponse {
 
-    private SubmitResult result;
+    private String result;
 }
