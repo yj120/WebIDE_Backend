@@ -135,7 +135,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
                     .findAny()
                     .orElseThrow();
 
-            return new FileProcessResponse<>(200, List.of(new SubmitResponse(metaData.getSubmitResult())), null);
+            return new FileProcessResponse<>(200, List.of(new SubmitResponse(metaData.getSubmitResult().toString())), null);
         }
 
         RestSubmitRequest submitRequest = RestSubmitRequest.builder()
@@ -172,7 +172,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
                 language = Language.Java;
             }
 
-            if(response.getData().get(0).getResult() == SubmitResult.CORRECT){
+            if(response.getData().get(0).getResult().equals("CORRECT")){
                 result = true;
             }
 
@@ -186,7 +186,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
             msRepository.updateMemberSolved(ms);
 
             RunCode updateMetaData = RunCode.builder()
-                    .submitResult(response.getData().get(0).getResult())
+                    .submitResult(response.getData().get(0).changeToEnum())
                     .sourceUrl(awsKeyPath)
                     .build();
 
