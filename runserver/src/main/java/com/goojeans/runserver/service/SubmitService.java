@@ -39,7 +39,8 @@ public class SubmitService {
 		long algorithmId = submitRequestDto.getAlgorithmId();
 		String s3Key = submitRequestDto.getS3Key();
 		Extension fileExtension = submitRequestDto.getFileExtension();
-
+		log.info("check algo Id= {}", algorithmId);
+		log.info("check s3Key= {}", s3Key);
 		try {
 
 			// 절대 경로 지정 및 디렉토리 생성
@@ -53,9 +54,11 @@ public class SubmitService {
 
 			// ANSWER, TESTCASES 없는 경우, 수가 다른 경우 ERROR 처리 (Server Error)
 			if (submitAllFilesSet.getAnswers().isEmpty() | submitAllFilesSet.getTestcases().isEmpty()) {
+				log.info("no test cases or answers");
 				return ApiResponse.serverErrorFrom( "TESTCASES, ANSWERS가 없음.");
 			}
 			if (submitAllFilesSet.getAnswers().size() != submitAllFilesSet.getTestcases().size()) {
+				log.info("testcase and answers nuber is diffrent");
 				return ApiResponse.serverErrorFrom("TESTCASES, ANSWERS 수가 다름");
 			}
 
@@ -113,6 +116,7 @@ public class SubmitService {
 		String[] cmd = runService.getCmd(fileExtension, submitExecuteFileSet.getExcuteFile().getPath());
 		// 정답과 비교 후 결과 return
 		SubmitResult result = isCorrect(submitExecuteFileSet, cmd);
+		log.info("submit result ={}", result);
 		return ApiResponse.okFrom(List.of(SubmitResponseDto.of(result))); // ServerError 발생 X
 	}
 
