@@ -40,7 +40,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             String nickname = user.get().getNickname();
 
             // User의 Role이 GUEST일 경우 처음 요청한 회원이므로 회원가입 페이지로 리다이렉트
-            if(oAuth2User.getRole() == Role.GUEST) {
+            if(oAuth2User.getRole() == Role.GUEST || oAuth2User.getRole() == Role.USER) {
                 String accessToken = jwtService.createAccessToken(oAuth2User.getEmail(),id,nickname);
 
                 log.info("accessToken={}",accessToken);
