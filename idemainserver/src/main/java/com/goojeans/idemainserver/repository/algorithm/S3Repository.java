@@ -11,5 +11,6 @@ public interface S3Repository {
 	public boolean deleteAlgosByAlgoId(Long algorithmId);
 
 	public boolean deleteAlgosByUserId(Long userId);
+	public void deleteFileFromS3(String path) ;
 
 }
