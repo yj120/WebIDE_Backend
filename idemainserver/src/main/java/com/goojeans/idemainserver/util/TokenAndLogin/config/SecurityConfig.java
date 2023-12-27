@@ -37,16 +37,19 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
+    //cors
+    private final CorsConfig corsConfig;
 
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                //.cors(//TODO)
+                // TODO
+                .cors(c-> c.configurationSource(corsConfig.corsConfigurationSource())) // 🌟 cors 커스텀
                 .formLogin(f->f.disable()) // FormLogin 사용 X
                 .httpBasic(h->h.disable()) // httpBasic 사용 X
                 .csrf(c->c.disable()) // csrf 보안 사용 X
-                .cors(c->c.configure(http)) // 🌟cors 커스텀
+                //.cors(c->c.configure(http)) // 🌟cors 커스텀
                 .headers(h->h.frameOptions(f->f.disable()))
                 // 세션 사용하지 않으므로 STATELESS로 설정
                 .sessionManagement(sm->sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
