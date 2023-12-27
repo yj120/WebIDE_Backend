@@ -40,6 +40,8 @@ public class UserController {
     private final JwtService jwtService;
     private final LoginService loginService;
 
+    private ObjectMapper objectMapper = new ObjectMapper(); // JSON 변환을 위한 ObjectMapper
+
 
 
 
@@ -102,14 +104,25 @@ public class UserController {
     }
 
 
-
     // OAuth login 성공 후 사용자 정보
-    @GetMapping("/oauth/sign-up")
+    // social platform -> backendserver -> frontendserver
+   // @GetMapping("/oauth/sign-up")
+    @GetMapping("/oauth/info")
     public ResponseDto<OAuthUserInfoDto> oauthSignup(@RequestParam(name="token")String token, HttpServletResponse response){
-
-        log.info("신규회원");
         return userService.getOAuthUserInfoDto(token);
     }
+
+    @GetMapping("/oauth/sign-up")
+    public void redirect(String token, HttpServletResponse response){
+        // 리다이렉트 할 프론트 서버 주소
+        String redirectUrl = "https://goojeans-50163.web.app/oauth/callback?token=" + token;
+        try{
+            response.sendRedirect(redirectUrl);
+        }catch (Exception e){
+            log.error("프론트 서버 보내기 실패");
+        }
+    }
+
 
     // 사용자 정보
     @PostMapping("/api/userInfo")
