@@ -45,9 +45,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 // TODO
-                //.cors(c-> c.configurationSource(corsConfig.corsConfigurationSource())) // 🌟 cors 커스텀
-                // cors disable test
-                .cors(c->c.disable())
+                .cors(c-> c.configurationSource(corsConfig.corsConfigurationSource())) // 🌟 cors 커스텀
                 .formLogin(f->f.disable()) // FormLogin 사용 X
                 .httpBasic(h->h.disable()) // httpBasic 사용 X
                 .csrf(c->c.disable()) // csrf 보안 사용 X
