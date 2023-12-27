@@ -51,6 +51,15 @@ public class S3RepositoryImpl implements S3Repository {
 					ByteBuffer.wrap(content.getBytes(StandardCharsets.UTF_8))));
 	}
 
+	public void deleteFileFromS3(String path) {
+
+		// TODO 파일 경로 없을 때
+			s3Client.deleteObject(DeleteObjectRequest.builder()
+				.bucket(bucket)
+				.key(path)
+				.build());
+	}
+
 	public String getObjectAsString( String objectKey) {
 		GetObjectRequest getObjectRequest = GetObjectRequest.builder()
 			.bucket(bucket)

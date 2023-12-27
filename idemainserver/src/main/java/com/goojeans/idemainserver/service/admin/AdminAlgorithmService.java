@@ -18,6 +18,9 @@ import com.goojeans.idemainserver.util.Language;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.s3.model.Delete;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 @Slf4j
 @Service
@@ -108,13 +111,21 @@ public class AdminAlgorithmService {
 
 		List<String> testcases = requestDto.getTestcases();
 		List<String> answers = requestDto.getAnswers();
-		int cnt = 1;
-		for (int i = 0; i < testcases.size(); i++) {
-			String testcasePath = algorithmId + "/testcases/testcase" + (cnt) + ".txt";
-			s3Repository.uploadString(testcasePath, testcases.get(i));
-
-			String answerPath = algorithmId + "/answers/answer" + (cnt++) + ".txt";
-			s3Repository.uploadString(answerPath, answers.get(i));
+		int originSize = s3Repository.getObjectsAsStringList(algorithmId + "/testcases").size();
+		int newSize = testcases.size();
+		if (newSize < originSize) {
+			for (int i = 1; i <= newSize; i++) {
+				String testcasePath = algorithmId + "/testcases/testcase" + (i) + ".txt";
+				s3Repository.uploadString(testcasePath, testcases.get(i));
+				String answerPath = algorithmId + "/answers/answer" + (i) + ".txt";
+				s3Repository.uploadString(answerPath, answers.get(i));
+			}
+			for (int i = newSize+1; i <= originSize; i++) {
+				String testcasePath = algorithmId + "/testcases/testcase" + (i) + ".txt";
+				s3Repository.deleteFileFromS3(testcasePath);
+				String answerPath = algorithmId + "/answers/answer" + (i) + ".txt";
+				s3Repository.deleteFileFromS3(answerPath);
+			}
 
 		}
 
