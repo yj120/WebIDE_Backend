@@ -74,15 +74,16 @@ public class AdminAlgorithmService {
 		String description = requestDto.getDescription();
 		String descriptionPath = algorithmId + "/algorithm.txt";
 		s3Repository.uploadString(descriptionPath, description);
-log.info("descriptionPath: {}", descriptionPath);
+
 		List<String> testcases = requestDto.getTestcases();
 		List<String> answers = requestDto.getAnswers();
-		for (int i = 1; i <= testcases.size(); i++) {
-			String testcasePath = algorithmId + "/testcases/testcase" + (i) + ".txt";
-			s3Repository.uploadString(testcasePath, testcases.get(i-1));
+		int cnt = 1;
+		for (int i = 0; i < testcases.size(); i++) {
+			String testcasePath = algorithmId + "/testcases/testcase" + (cnt) + ".txt";
+			s3Repository.uploadString(testcasePath, testcases.get(i));
 
-			String answerPath = algorithmId + "/answers/answer" + (i) + ".txt";
-			s3Repository.uploadString(answerPath, answers.get(i-1));
+			String answerPath = algorithmId + "/answers/answer" + (cnt++) + ".txt";
+			s3Repository.uploadString(answerPath, answers.get(i));
 
 		}
 
@@ -112,14 +113,13 @@ log.info("descriptionPath: {}", descriptionPath);
 		List<String> answers = requestDto.getAnswers();
 		int originSize = s3Repository.getObjectsAsStringList(algorithmId + "/testcases").size();
 		int newSize = testcases.size();
-		for (int i = 1; i <= newSize; i++) {
-			String testcasePath = algorithmId + "/testcases/testcase" + (i) + ".txt";
-			s3Repository.uploadString(testcasePath, testcases.get(i-1));
-			String answerPath = algorithmId + "/answers/answer" + (i) + ".txt";
-			s3Repository.uploadString(answerPath, answers.get(i-1));
-		}
 		if (newSize < originSize) {
-
+			for (int i = 1; i <= newSize; i++) {
+				String testcasePath = algorithmId + "/testcases/testcase" + (i) + ".txt";
+				s3Repository.uploadString(testcasePath, testcases.get(i));
+				String answerPath = algorithmId + "/answers/answer" + (i) + ".txt";
+				s3Repository.uploadString(answerPath, answers.get(i));
+			}
 			for (int i = newSize+1; i <= originSize; i++) {
 				String testcasePath = algorithmId + "/testcases/testcase" + (i) + ".txt";
 				s3Repository.deleteFileFromS3(testcasePath);
