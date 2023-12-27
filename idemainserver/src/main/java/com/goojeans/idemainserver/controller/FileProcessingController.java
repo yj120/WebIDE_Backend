@@ -83,7 +83,7 @@ public class FileProcessingController {
         String id = decode.get("id");
 
         executeRequest.setUserId(Long.parseLong(id));
-
+        log.info("source code = {}", executeRequest.getSourceCode());
         return service.executeAndSaveCode(executeRequest);
     }
 
@@ -99,6 +99,7 @@ public class FileProcessingController {
         String id = decode.get("id");
 
         submitRequest.setUserId(Long.parseLong(id));
+        log.info("source code = {}", submitRequest.getSourceCode());
 
         return service.submitAndSaveCode(submitRequest);
     }
