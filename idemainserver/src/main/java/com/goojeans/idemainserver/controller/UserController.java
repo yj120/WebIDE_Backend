@@ -177,7 +177,7 @@ public class UserController {
     }
 
 
-    @GetMapping("/unsubscribe")
+    @GetMapping("/mypage/edit/unsubscribe")
     public ResponseDto<?> unsubscribe(HttpServletRequest request){
         return userService.unsubscribe(request);
     }
