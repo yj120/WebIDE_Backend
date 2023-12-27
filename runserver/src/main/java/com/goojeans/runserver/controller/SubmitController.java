@@ -25,13 +25,8 @@ public class SubmitController {
 	@PostMapping
 	public ApiResponse<SubmitResponseDto> submit(@Validated @RequestBody SubmitRequestDto submitRequestDto) {
 
-		log.info("submitRequestDto: {}", submitRequestDto.toString());
-
 		// Error 포함 Response
 		ApiResponse<SubmitResponseDto> submitResponseDto = submitService.codeJudge(submitRequestDto);
-
-		log.info("submitResponseDto.getData(): {}", submitResponseDto.getData().toString());
-		log.info("채점 컨트롤러 종료");
 
 		return submitResponseDto;
 
