@@ -20,4 +20,15 @@ public enum Extension {
 		return Extension.valueOf(extension.toUpperCase());
 	}
 
+	// String으로 변환하기
+	public static String convertToStringFrom(Extension extension) {
+		return extension.getExtension();
+	}
+
+	// log 위해 toString 재정의
+	@Override
+	public String toString() {
+		return "Extension [extension=" + extension + "]";
+	}
+
 }

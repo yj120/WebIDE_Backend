@@ -20,7 +20,7 @@ public class ApiResponse<T> {
 
 	private int status;
 
-	private List<T> data = new ArrayList<>();
+	private List<T> data;
 
 	private String error; // “오류 있다면 출력”
 
