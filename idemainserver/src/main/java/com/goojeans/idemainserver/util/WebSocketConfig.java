@@ -21,7 +21,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
      */
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws/chat").setAllowedOriginPatterns("https://eb.goojeans-server.com")
+        registry.addEndpoint("/ws/chat").setAllowedOriginPatterns("*")
                 .withSockJS();
 
         //postman 테스트용 endpoint
