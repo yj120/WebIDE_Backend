@@ -75,6 +75,7 @@ public class SubmitService {
 				// compile 진행
 				int exitCode = runService.compileSourceCodeFile(fileExtension, sourceCodeFileSet);
 				if (exitCode != 0) {
+					log.info("compile error: exitCode = {}", exitCode);
 					// compile error 발생, 결과 return
 					return ApiResponse.okFrom(List.of(
 						SubmitResponseDto.of(SubmitResult.ERROR)
@@ -162,6 +163,7 @@ public class SubmitService {
 			// runtime error
 			int exitCode = process.exitValue();
 			if (exitCode != 0) {
+				log.info("runtime error: exitCode = {}", exitCode);
 				return SubmitResult.ERROR;
 			}
 

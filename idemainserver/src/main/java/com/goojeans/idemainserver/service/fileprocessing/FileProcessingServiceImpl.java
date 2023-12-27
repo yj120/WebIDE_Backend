@@ -1,5 +1,7 @@
 package com.goojeans.idemainserver.service.fileprocessing;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goojeans.idemainserver.domain.dto.request.FileRequests.*;
 import com.goojeans.idemainserver.domain.dto.response.FileResponses.*;
 import com.goojeans.idemainserver.domain.entity.Algorithm;
@@ -151,7 +153,12 @@ public class FileProcessingServiceImpl implements FileProcessService{
             uploadFile = getFile(request.getSourceCode());
             repository.saveFile(awsKeyPath, uploadFile);
 
-            response = restPost(requestUrl + "/submit", submitRequest, SubmitResponse.class);
+            String rawResponse = restTemplate.postForObject(requestUrl + "/submit", submitRequest, String.class);
+            ObjectMapper objectMapper = new ObjectMapper();
+            response = objectMapper.readValue(
+                    rawResponse,
+                    new TypeReference<FileProcessResponse<SubmitResponse>>() {}
+            );
 
             if (response.getStatus() != 200) {
                 throw new RuntimeException(response.getError());
