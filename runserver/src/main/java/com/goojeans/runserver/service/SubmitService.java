@@ -218,7 +218,7 @@ public class SubmitService {
 			log.info("[runserver][service][submit] compareToAnswer outputFileContentTrimmed = \"{}\", answerFileContentTrimmed= \"{}\"",
 				outputFileContentTrimmed,
 				answerFileContentTrimmed);
-			return outputFileContentTrimmed.equals(answerFileContentTrimmed.trim());
+			return outputFileContentTrimmed.equals(answerFileContentTrimmed);
 
 		} catch (IOException e) {
 			log.error("[runserver][service][submit] compareToAnswer IOException error = {}", e.getMessage());
