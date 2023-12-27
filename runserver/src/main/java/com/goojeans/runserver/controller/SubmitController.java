@@ -20,16 +20,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/submit")
 public class SubmitController {
 
-    private final SubmitService submitService;
+	private final SubmitService submitService;
 
-    @PostMapping
-    public ApiResponse<SubmitResponseDto> submit(@Validated @RequestBody SubmitRequestDto submitRequestDto) {
+	@PostMapping
+	public ApiResponse<SubmitResponseDto> submit(@Validated @RequestBody SubmitRequestDto submitRequestDto) {
 
-        // Error 포함 Response
-        ApiResponse<SubmitResponseDto> submitResponseDto = submitService.codeJudge(submitRequestDto);
+		log.info("submitRequestDto: {}", submitRequestDto.toString());
 
-        return submitResponseDto;
+		// Error 포함 Response
+		ApiResponse<SubmitResponseDto> submitResponseDto = submitService.codeJudge(submitRequestDto);
 
-    }
+		log.info("submitResponseDto.getData(): {}", submitResponseDto.getData().toString());
+		log.info("채점 컨트롤러 종료");
+
+		return submitResponseDto;
+
+	}
 
 }
