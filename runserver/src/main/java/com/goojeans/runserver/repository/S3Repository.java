@@ -1,7 +1,11 @@
 package com.goojeans.runserver.repository;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -260,16 +264,16 @@ public class S3Repository {
 			String downloadPathFile = directoriesPath + split[split.length - 1];
 			File file = new File(downloadPathFile);
 
-			// 생성한 파일에 내용 쓰기, 내용을 쓰면 자동으로 실제 생성됨.
-			// try-with-resources 대신 close() 사용
-			OutputStream os = new FileOutputStream(file);
-			if (data == null) {
-				os.write("".getBytes());
-			} else {
-				os.write(data);
+			String serializedCode = objectBytes.asUtf8String();
+
+			// 이스케이프 문자 처리
+			String sourceCode = serializedCode.replace("\\\\", "\\")
+				.replace("\\\"", "\"")
+				.replace("\\n", "\n");
+
+			try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+				writer.write(sourceCode);
 			}
-			os.flush();
-			os.close();
 			return file;
 
 		} catch (SdkClientException | S3Exception e) {
