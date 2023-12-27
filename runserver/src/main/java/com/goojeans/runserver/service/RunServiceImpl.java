@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Service;
@@ -96,8 +97,8 @@ public class RunServiceImpl implements RunService {
 		}
 	}
 
-	public boolean isTimeOut(Process process, int timeoutSeconds)  {
-		try{
+	public boolean isTimeOut(Process process, int timeoutSeconds) {
+		try {
 			boolean isTimeOut = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
 			if (!isTimeOut) {
 				// destroy 후 1ms 대기
@@ -141,17 +142,17 @@ public class RunServiceImpl implements RunService {
 
 	public String fileToString(File fileName) {
 
-		StringBuilder stringBuilder = new StringBuilder();
-		try(BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
-			String line = "";
-			while ((line = reader.readLine()) != null) {
-				stringBuilder.append(line).append("\n");
-			}
+		try {
+			// 파일의 모든 내용을 문자열로 읽기
+			String fileContent = new String(Files.readAllBytes(fileName.toPath()));
+
+			// 문자열 앞뒤의 공백과 개행 문자 제거
+			return fileContent.trim();
+
 		} catch (IOException e) {
-			log.error("[runserver][service] filename: {}의 fileToString IOException error = {}", fileName, e.getMessage());
+			log.error("[runserver][service] filename: {}의 fileToString IOException error = {}", fileName,
+				e.getMessage());
 			throw new RuntimeException(e);
 		}
-		return stringBuilder.toString();
 	}
-
 }
