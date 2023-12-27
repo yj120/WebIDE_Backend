@@ -1,6 +1,9 @@
 package com.goojeans.runserver.controller;
 
+import java.util.List;
+
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,13 +25,20 @@ public class ExecuteController {
 
 	private final ExecuteService executeService;
 
+	@ExceptionHandler(Exception.class)
+	public ApiResponse<Void> exceptionHandler(Exception e) {
+		return ApiResponse.serverErrorFrom(e.getMessage());
+	}
+
 	@PostMapping
 	public ApiResponse<ExecuteResponseDto> execute(@RequestBody @Validated ExecuteRequestDto executeRequestDto) {
 
-		// Error 포함 Response
-		ApiResponse<ExecuteResponseDto> executeResult = executeService.codeJudge(executeRequestDto);
-
-		return executeResult;
-
+		try {
+			List<ExecuteResponseDto> executeResult = executeService.codeJudge(executeRequestDto);
+			return ApiResponse.okFrom(executeResult);
+		} catch (Exception e) {
+			log.error("[runserver][controller][execute] execute 시 error 발생 ={}", e.getMessage());
+			throw new RuntimeException(e);
+		}
 	}
 }

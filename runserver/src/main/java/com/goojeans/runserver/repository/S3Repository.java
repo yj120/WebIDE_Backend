@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
@@ -55,9 +56,13 @@ public class S3Repository {
 		String dirAbsolutePath,
 		String s3Key) {
 
-		File sourceCodeFile, excuteFile, errorFile, outputFile;
-		List<File> testcases, answers;
 		try {
+
+			File sourceCodeFile, excuteFile, errorFile, outputFile;
+			List<File> testcases, answers;
+			log.info("[runserver][repository][submit] downloadSubmitAllFilesFromS3 dirAbsolutePath ={}",
+				dirAbsolutePath);
+
 			// 절대 경로 지정 및 디렉토리 생성
 			String directoryPath = Files.createDirectories(Paths.get(dirAbsolutePath)).toAbsolutePath() + "/";
 
@@ -91,21 +96,23 @@ public class S3Repository {
 			} else {
 				excuteFile = getBlankFile(directoryPath, "Main.py");
 			}
-
+			return SubmitAllFilesSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testcases, answers);
 		} catch (IOException e) {
-			log.error("{}", e.getMessage());
+			log.error("[runserver][repository] downloadSubmitAllFilesFromS3 시 error 발생 = {}", e.getMessage());
 			throw new RuntimeException(e);
 		}
 
-		return SubmitAllFilesSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testcases, answers);
 	}
 
 	public ExecuteAllFileSet downloadExecuteAllFilesFromS3(Extension fileExtension,
 		String dirAbsolutePath, String s3Key, String testCase) {
 
-		File sourceCodeFile, excuteFile, errorFile, outputFile, testCaseFile;
 		try {
 
+			log.info("[runserver][repository][execute] downloadExecuteAllFilesFromS3 dirAbsolutePath ={}",
+				dirAbsolutePath);
+
+			File sourceCodeFile, excuteFile, errorFile, outputFile, testCaseFile;
 			// 절대 경로 지정 및 디렉토리 생성
 			String directoryPath = Files.createDirectories(Paths.get(dirAbsolutePath)).toAbsolutePath() + "/";
 
@@ -136,13 +143,12 @@ public class S3Repository {
 			} else {
 				excuteFile = getBlankFile(directoryPath, "Main.py");
 			}
-
+			return ExecuteAllFileSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testCaseFile);
 		} catch (IOException e) {
-			log.error("{}", e.getMessage());
+			log.error("[runserver][repository] downloadExecuteAllFilesFromS3 시 error 발생 = {}", e.getMessage());
 			throw new RuntimeException(e);
 		}
 
-		return ExecuteAllFileSet.of(sourceCodeFile, excuteFile, errorFile, outputFile, testCaseFile);
 	}
 
 	/*
@@ -151,23 +157,19 @@ public class S3Repository {
 	 * @param testCase
 	 * @return File
 	 */
-	private File testStringToFile(String directoryPath, String testCase) throws IOException {
+	private File testStringToFile(String directoryPath, String testCase) {
 
 		File newFile = new File(directoryPath + "testCase.txt");
-		newFile.createNewFile();
-
-		OutputStream os = new FileOutputStream(newFile);
-		// null인 경우
-		if(testCase == null) {
-			os.write("".getBytes());
-		} else {
-			os.write(testCase.getBytes());
+		try (OutputStream os = new FileOutputStream(newFile)) {
+			newFile.createNewFile();
+			// null인 경우
+			os.write(Objects.requireNonNullElse(testCase, "").getBytes());
+			os.flush();
+			return newFile;
+		} catch (IOException e) {
+			log.error("[runserver][repository] testStringToFile 시 error 발생 = {}", e.getMessage());
+			throw new RuntimeException(e);
 		}
-		os.flush();
-		os.close();
-
-		return newFile;
-
 	}
 
 	/*
@@ -176,10 +178,15 @@ public class S3Repository {
 	 * @param nameExtension
 	 * @return File
 	 */
-	private static File getBlankFile(String directoryPath, String nameExtension) throws IOException {
-		File newFile = new File(directoryPath + nameExtension);
-		newFile.createNewFile();
-		return newFile;
+	private static File getBlankFile(String directoryPath, String nameExtension) {
+		try {
+			File newFile = new File(directoryPath + nameExtension);
+			newFile.createNewFile();
+			return newFile;
+		} catch (IOException e) {
+			log.error("[runserver][repository] getBlankFile 시 error 발생 = {}", e.getMessage());
+			throw new RuntimeException(e);
+		}
 	}
 
 	/*
@@ -189,7 +196,7 @@ public class S3Repository {
 	 * @param folerName
 	 * @return List<File>
 	 */
-	public List<File> getFileListFromS3(String directoriesPath, long algorithmId, String folerName) throws IOException {
+	public List<File> getFileListFromS3(String directoriesPath, long algorithmId, String folerName) {
 
 		String folderNamePath = algorithmId + "/" + folerName;
 		List<File> fileList = new ArrayList<>();
@@ -221,6 +228,7 @@ public class S3Repository {
 		Collections.sort(fileList);
 
 		return fileList;
+
 	}
 
 	/*
@@ -229,42 +237,49 @@ public class S3Repository {
 	 * @param s3Key
 	 * @return File
 	 */
-	private File downloadFileFromS3(String directoriesPath, String s3Key) throws
-		SdkClientException,
-		S3Exception, IOException, NullPointerException {
+	private File downloadFileFromS3(String directoriesPath, String s3Key) {
 
-		// S3에서 파일이 있는지 확인
-		s3Client.headObject(HeadObjectRequest.builder()
-			.bucket(bucket)
-			.key(s3Key)
-			.build());
-		// S3에서 파일 가져와 내용 Byte로 저장
-		GetObjectRequest objectRequest = GetObjectRequest
-			.builder()
-			.key(s3Key)
-			.bucket(bucket)
-			.build();
+		try {
+			// S3에서 파일이 있는지 확인
+			s3Client.headObject(HeadObjectRequest.builder()
+				.bucket(bucket)
+				.key(s3Key)
+				.build());
+			// S3에서 파일 가져와 내용 Byte로 저장
+			GetObjectRequest objectRequest = GetObjectRequest
+				.builder()
+				.key(s3Key)
+				.bucket(bucket)
+				.build();
 
-		ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(objectRequest);
-		byte[] data = objectBytes.asByteArray();
+			ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(objectRequest);
+			byte[] data = objectBytes.asByteArray();
 
-		// 경로에 파일 생성
-		String[] split = s3Key.split("/");
-		String downloadPathFile = directoriesPath + split[split.length - 1];
-		File file = new File(downloadPathFile);
+			// 경로에 파일 생성
+			String[] split = s3Key.split("/");
+			String downloadPathFile = directoriesPath + split[split.length - 1];
+			File file = new File(downloadPathFile);
 
-		// 생성한 파일에 내용 쓰기, 내용을 쓰면 자동으로 실제 생성됨.
-		// try-with-resources 대신 close() 사용
-		OutputStream os = new FileOutputStream(file);
-		if(data == null) {
-			os.write("".getBytes());
-		} else {
-			os.write(data);
+			// 생성한 파일에 내용 쓰기, 내용을 쓰면 자동으로 실제 생성됨.
+			// try-with-resources 대신 close() 사용
+			OutputStream os = new FileOutputStream(file);
+			if (data == null) {
+				os.write("".getBytes());
+			} else {
+				os.write(data);
+			}
+			os.flush();
+			os.close();
+			return file;
+
+		} catch (SdkClientException | S3Exception e) {
+			log.error("[runserver][repository] downloadFileFromS3 시 SdkClientException | S3Exception error 발생 = {}",
+				e.getMessage());
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			log.error("[runserver][repository] downloadFileFromS3 시 error 발생 = {}", e.getMessage());
+			throw new RuntimeException(e);
 		}
-		os.flush();
-		os.close();
-
-		return file;
 
 	}
 
