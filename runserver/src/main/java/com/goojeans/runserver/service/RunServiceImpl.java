@@ -49,6 +49,7 @@ public class RunServiceImpl implements RunService {
 				for (File file : folder_list) {
 					isDeleted = file.delete();// 파일 삭제
 					if (!isDeleted) {
+						log.info("[runserver][service] {} 파일 삭제 실패", file.getName());
 						return false;
 						// deleteFolder(file);
 					}
@@ -65,48 +66,54 @@ public class RunServiceImpl implements RunService {
 		return true;
 	}
 
-	public int compileSourceCodeFile(Extension fileExtension, SourceCodeFileSet sourceCodeFileSet) throws
-		InterruptedException, IOException {
+	public int compileSourceCodeFile(Extension fileExtension, SourceCodeFileSet sourceCodeFileSet) {
 
-		File sourceCodeFile = sourceCodeFileSet.getSourceCodeFile();
-		String sourceCodeFilePath = sourceCodeFile.getPath();
-		String executePath = sourceCodeFileSet.getExcuteFile().getPath();
-		File outputFile = sourceCodeFileSet.getOutputFile();
-		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile.getPath()));
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(sourceCodeFileSet.getOutputFile().getPath()))) {
+			File sourceCodeFile = sourceCodeFileSet.getSourceCodeFile();
+			String sourceCodeFilePath = sourceCodeFile.getPath();
+			String executePath = sourceCodeFileSet.getExcuteFile().getPath();
+			File outputFile = sourceCodeFileSet.getOutputFile();
 
-		// sourceCode processBuilder 생성
-		ProcessBuilder processBuilder = getProcessBuilder(fileExtension, sourceCodeFilePath, executePath);
+			// sourceCode processBuilder 생성
+			ProcessBuilder processBuilder = getProcessBuilder(fileExtension, sourceCodeFilePath, executePath);
 
-		// 실행 전 output 파일 지정, 컴파일 시는 output에 error까지 출력됨.
-		processBuilder.redirectOutput(outputFile);
-		processBuilder.redirectErrorStream(true);
+			// 실행 전 output 파일 지정, 컴파일 시는 output에 error까지 출력됨.
+			processBuilder.redirectOutput(outputFile);
+			processBuilder.redirectErrorStream(true);
 
-		Process process = processBuilder.start();
+			Process process = processBuilder.start();
 
-		// 종료 시간 설정, timeout이면 errorfile에는 "컴파일 시간 초과" 출력
-		if (!isTimeOut(process, 2)) {
-			// output file에 "컴파일 시간 초과" 수기 출력
-			log.info("컴파일 시간 초과");
-			writer.write("컴파일 시간 초과");
+			// 종료 시간 설정, timeout이면 errorfile에는 "컴파일 시간 초과" 출력
+			if (!isTimeOut(process, 5)) {
+				// output file에 "컴파일 시간 초과" 수기 출력
+				log.info("[runserver][service] compile 시간 초과,  outputfile = \"{}\"", fileToString(outputFile));
+				writer.write("컴파일 시간 초과");
+			}
+			return process.exitValue();
+		} catch (IOException e) {
+			log.error("[runserver][service] compileSourceCodeFile IOException error = {}", e.getMessage());
+			throw new RuntimeException(e);
 		}
-		writer.flush();
-		writer.close();
-		return process.exitValue();
-
 	}
 
-	public boolean isTimeOut(Process process, int timeoutSeconds) throws InterruptedException {
-		boolean isTimeOut = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
-		if (!isTimeOut) {
-			// destroy 후 1ms 대기
-			process.destroy();
-			process.waitFor(1, TimeUnit.MILLISECONDS);
+	public boolean isTimeOut(Process process, int timeoutSeconds)  {
+		try{
+			boolean isTimeOut = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+			if (!isTimeOut) {
+				// destroy 후 1ms 대기
+				process.destroy();
+				process.waitFor(1, TimeUnit.MILLISECONDS);
 
-			if (process.isAlive()) {
-				process.destroyForcibly();
+				if (process.isAlive()) {
+					process.destroyForcibly();
+				}
 			}
+			return isTimeOut;
+		} catch (InterruptedException e) {
+			log.error("[runserver][service] isTimeOut InterruptedException error = {}", e.getMessage());
+			throw new RuntimeException(e);
 		}
-		return isTimeOut;
+
 	}
 
 	public ProcessBuilder getProcessBuilder(Extension fileExtension, String sourceCodeFilePath, String executePath) {
@@ -115,9 +122,9 @@ public class RunServiceImpl implements RunService {
 		} else if (fileExtension.equals(Extension.JAVA)) {
 			return new ProcessBuilder("javac", sourceCodeFilePath);
 		}
+		log.info("[runserver][service] getProcessBuilder error");
 		return null;
 	}
-
 
 	public String[] getCmd(Extension fileExtension, String executeFilePath) {
 
@@ -135,14 +142,13 @@ public class RunServiceImpl implements RunService {
 	public String fileToString(File fileName) {
 
 		StringBuilder stringBuilder = new StringBuilder();
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(fileName));
+		try(BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 			String line = "";
 			while ((line = reader.readLine()) != null) {
 				stringBuilder.append(line).append("\n");
 			}
 		} catch (IOException e) {
-			log.error(e.getMessage());
+			log.error("[runserver][service] filename: {}의 fileToString IOException error = {}", fileName, e.getMessage());
 			throw new RuntimeException(e);
 		}
 		return stringBuilder.toString();
