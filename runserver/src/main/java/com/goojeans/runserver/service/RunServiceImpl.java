@@ -86,6 +86,7 @@ public class RunServiceImpl implements RunService {
 		// 종료 시간 설정, timeout이면 errorfile에는 "컴파일 시간 초과" 출력
 		if (!isTimeOut(process, 2)) {
 			// output file에 "컴파일 시간 초과" 수기 출력
+			log.info("컴파일 시간 초과");
 			writer.write("컴파일 시간 초과");
 		}
 		writer.flush();
