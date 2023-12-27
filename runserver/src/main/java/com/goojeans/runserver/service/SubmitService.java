@@ -205,13 +205,21 @@ public class SubmitService {
 	public boolean compareToAnswer(File outputFile, File answer) {
 
 		try {
-			byte[] outputFileBytes = Files.readAllBytes(outputFile.toPath());
-			byte[] answerBytes = Files.readAllBytes(answer.toPath());
-			// TODO 왜 빈 로그 하나, 채워진 로그 하나 출력되지?
-			log.info("[runserver][service][submit] compareToAnswer outputFileBytes = \"{}\", answerBytes= \"{}\"",
-				Base64.getEncoder().encodeToString(outputFileBytes),
-				Base64.getEncoder().encodeToString(answerBytes));
-			return Arrays.equals(outputFileBytes, answerBytes);
+
+			// 파일의 모든 내용을 문자열로 읽기
+			String outputFileContent = new String(Files.readAllBytes(outputFile.toPath()));
+			String answerFileContent = new String(Files.readAllBytes(answer.toPath()));
+
+			// 문자열 앞뒤의 공백과 개행 문자 제거
+			String outputFileContentTrimmed = outputFileContent.trim();
+			String answerFileContentTrimmed = answerFileContent.trim();
+
+			// 개행 문자와 공백을 제외한 문자열 비교
+			log.info("[runserver][service][submit] compareToAnswer outputFileContentTrimmed = \"{}\", answerFileContentTrimmed= \"{}\"",
+				outputFileContentTrimmed,
+				answerFileContentTrimmed);
+			return outputFileContentTrimmed.equals(answerFileContentTrimmed.trim());
+
 		} catch (IOException e) {
 			log.error("[runserver][service][submit] compareToAnswer IOException error = {}", e.getMessage());
 			throw new RuntimeException(e);
