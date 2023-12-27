@@ -14,7 +14,6 @@ import com.goojeans.idemainserver.repository.fileprocessing.FileProcessRepositor
 import com.goojeans.idemainserver.repository.membersolved.MemberSolvedRepository;
 import com.goojeans.idemainserver.util.FileExtension;
 import com.goojeans.idemainserver.util.Language;
-import com.goojeans.idemainserver.util.SubmitResult;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -116,7 +115,7 @@ public class FileProcessingServiceImpl implements FileProcessService{
                 throw new RuntimeException(response.getError());
             }
         } catch (Exception e) {
-            log.info("error={}", e.getStackTrace());
+            log.error(e.getMessage());
             return new FileProcessResponse<>(6000, null, e.getMessage());
         } finally {
             if (uploadFile != null && uploadFile.exists()){
