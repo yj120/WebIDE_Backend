@@ -19,7 +19,8 @@ public class CorsConfig {
         config.setAllowCredentials(true);
         // 브라우저에게 어떤 출처(origin)의 스크립트가 해당 자원을 사용할 수 있는지 알려줌
         // 해당 경로로 부터 오는 요청들을 허용하겠다고 설정
-        config.setAllowedOrigins(List.of("https://goojeans-50163.web.app", "http://localhost:3000"));
+        config.setAllowedOrigins(
+                List.of("https://goojeans-50163.web.app", "http://localhost:3000", "https://goojeans-50163.web.app/oauth/callback"));
         // 서버가 허용하는 HTTP 메서드
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         // 서버가 허용하는 HTTP 헤더
