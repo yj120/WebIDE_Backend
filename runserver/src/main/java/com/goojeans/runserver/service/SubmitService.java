@@ -1,5 +1,6 @@
 package com.goojeans.runserver.service;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -7,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,17 +33,18 @@ public class SubmitService {
 
 	private final RunService runService;
 
-	public ApiResponse<SubmitResponseDto> codeJudge(SubmitRequestDto submitRequestDto) {
+	public List<SubmitResponseDto> codeJudge(SubmitRequestDto submitRequestDto) {
 
+		log.info("[runserver][service][submit] codeJudge start");
 		// folder 생성, uuid, algorithmId, s3Key 변수 설정.
 		File folder = null;
-		final String uuid = UUID.randomUUID().toString();
-		long algorithmId = submitRequestDto.getAlgorithmId();
-		String s3Key = submitRequestDto.getS3Key();
-		Extension fileExtension = submitRequestDto.getFileExtension();
-		log.info("check algo Id= {}", algorithmId);
-		log.info("check s3Key= {}", s3Key);
 		try {
+			final String uuid = UUID.randomUUID().toString();
+			long algorithmId = submitRequestDto.getAlgorithmId();
+			String s3Key = submitRequestDto.getS3Key();
+			Extension fileExtension = submitRequestDto.getFileExtension();
+			log.info("[runserver][service][submit] check algo Id= {}", algorithmId);
+			log.info("[runserver][service][submit] check s3Key= {}", s3Key);
 
 			// 절대 경로 지정 및 디렉토리 생성
 			String directoryPath = Files.createDirectories(Paths.get(uuid)).toAbsolutePath() + "/";
@@ -54,48 +57,47 @@ public class SubmitService {
 
 			// ANSWER, TESTCASES 없는 경우, 수가 다른 경우 ERROR 처리 (Server Error)
 			if (submitAllFilesSet.getAnswers().isEmpty() | submitAllFilesSet.getTestcases().isEmpty()) {
-				log.info("no test cases or answers");
-				return ApiResponse.serverErrorFrom( "TESTCASES, ANSWERS가 없음.");
+				throw new NullPointerException("[runserver][service][submit] no test cases or answers");
 			}
 			if (submitAllFilesSet.getAnswers().size() != submitAllFilesSet.getTestcases().size()) {
-				log.info("testcase and answers nuber is diffrent");
-				return ApiResponse.serverErrorFrom("TESTCASES, ANSWERS 수가 다름");
+				throw new NullPointerException("[runserver][service][submit] testcase and answers nuber is diffrent");
 			}
 
+			log.info("[runserver][service][submit] compile start");
 			// compile 진행
 			SubmitExecuteFileSet submitExecuteFileSet;
 			if (fileExtension.equals(Extension.PYTHON3)) {
 				// python3 - compile 필요 없음.
 				submitExecuteFileSet = SubmitExecuteFileSet.pythonOf(submitAllFilesSet);
 			} else {
-
 				// compile할 sourceCode로 변환
 				SourceCodeFileSet sourceCodeFileSet = SourceCodeFileSet.of(submitAllFilesSet);
 
 				// compile 진행
 				int exitCode = runService.compileSourceCodeFile(fileExtension, sourceCodeFileSet);
+				log.info("[runserver][service][submit] exitCode = {}, compile output file = \"{}\"", exitCode,
+					runService.fileToString(submitAllFilesSet.getOutputFile()));
 				if (exitCode != 0) {
-					log.info("compile error: exitCode = {}", exitCode);
 					// compile error 발생, 결과 return
-					return ApiResponse.okFrom(List.of(
-						SubmitResponseDto.of(SubmitResult.ERROR)
-					));
+					return List.of(
+						SubmitResponseDto.of(SubmitResult.ERROR));
 				} else {
 					submitExecuteFileSet = SubmitExecuteFileSet.sourceCodeOf(submitAllFilesSet, sourceCodeFileSet);
 				}
 			}
 
+			log.info("[runserver][service][submit] checkTheAnswer start");
 			// 실행 파일 실행 - 채점 결과 return
 			return checkTheAnswer(fileExtension,
 				submitExecuteFileSet);
 
 		} catch (Exception e) {
-			log.error(e.getMessage());
-			return ApiResponse.serverErrorFrom( e.getMessage());
+			log.error("[runserver][service][submit] codeJudge error = {}", e.getMessage());
+			throw new RuntimeException(e);
 		} finally {
 			// 모두 지워지지 않았다면, 서버 에러 메시지 출력
 			if (!runService.deleteFolder(folder)) {
-				return ApiResponse.serverErrorFrom("모든 File 지우기 실패");
+				throw new RuntimeException("[runserver][service][submit] 모든 File 지우기 실패");
 			}
 		}
 
@@ -108,17 +110,15 @@ public class SubmitService {
 	 * @return ApiResponse<SubmitResponseDto>
 	 * @throws IOException, InterruptedException
 	 */
-	public ApiResponse<SubmitResponseDto> checkTheAnswer(Extension fileExtension,
-		SubmitExecuteFileSet submitExecuteFileSet) throws
-		IOException,
-		InterruptedException {
+	public List<SubmitResponseDto> checkTheAnswer(Extension fileExtension,
+		SubmitExecuteFileSet submitExecuteFileSet) {
 
 		// 각 언어 별 cmd 얻기
 		String[] cmd = runService.getCmd(fileExtension, submitExecuteFileSet.getExcuteFile().getPath());
 		// 정답과 비교 후 결과 return
 		SubmitResult result = isCorrect(submitExecuteFileSet, cmd);
-		log.info("submit result ={}", result);
-		return ApiResponse.okFrom(List.of(SubmitResponseDto.of(result))); // ServerError 발생 X
+		log.info("[runserver][service][submit] isCorrect result = {}", result.convertToStringFrom(result));
+		return List.of(SubmitResponseDto.of(result)); // ServerError 발생 X
 	}
 
 	/*
@@ -128,53 +128,70 @@ public class SubmitService {
 	 * @param command
 	 * @return Answer
 	 */
-	public SubmitResult isCorrect(SubmitExecuteFileSet submitExecuteFileSet, String... command) throws
-		IOException,
-		InterruptedException {
+	public SubmitResult isCorrect(SubmitExecuteFileSet submitExecuteFileSet, String... command) {
 
-		List<File> testcases = submitExecuteFileSet.getTestcases();
-		List<File> answers = submitExecuteFileSet.getAnswers();
-		File errorFile = submitExecuteFileSet.getErrorFile();
-		File outputFile = submitExecuteFileSet.getOutputFile();
-		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile.getPath()));
+		try (BufferedWriter writer = new BufferedWriter(
+			new FileWriter(submitExecuteFileSet.getErrorFile().getPath()))) {
+			List<File> testcases = submitExecuteFileSet.getTestcases();
+			List<File> answers = submitExecuteFileSet.getAnswers();
+			File errorFile = submitExecuteFileSet.getErrorFile();
+			File outputFile = submitExecuteFileSet.getOutputFile();
 
-		for (int i = 0; i < testcases.size(); i++) {
+			for (int i = 0; i < testcases.size(); i++) {
 
-			File testcase = testcases.get(i);
-			File answer = answers.get(i);
+				File testcase = testcases.get(i);
+				File answer = answers.get(i);
 
-			// sourceCode processBuilder 생성
-			ProcessBuilder processBuilder = new ProcessBuilder(command);
+				// sourceCode processBuilder 생성
+				ProcessBuilder processBuilder = new ProcessBuilder(command);
 
-			// testcase(input), error, output 파일 지정
-			processBuilder.redirectInput(testcase);
-			processBuilder.redirectOutput(outputFile);
-			processBuilder.redirectError(errorFile);
+				// testcase(input), error, output 파일 지정
+				processBuilder.redirectInput(testcase);
+				processBuilder.redirectOutput(outputFile);
+				processBuilder.redirectError(errorFile);
 
-			// 프로세스 실행
-			Process process = processBuilder.start();
-			// 시간 초과 판별
-			if (!runService.isTimeOut(process, 10)) {
-				// errorFile에 "컴파일 시간 초과" 수기 출력
-				writer.write("런타임 시간 초과");
-				return SubmitResult.TIMEOUT;
+				// 프로세스 실행
+				Process process = processBuilder.start();
+				// 시간 초과 판별
+				if (!runService.isTimeOut(process, 10)) {
+					// errorFile에 "런타임 시간 초과" 수기 출력
+					log.info(
+						"[runserver][service][submit] isCorrect Runtime 시간 초과 outputfile = \"{}\", errorFile = \"{}\"",
+						runService.fileToString(outputFile), runService.fileToString(errorFile));
+					writer.write("Runtime Timeout");
+					return SubmitResult.TIMEOUT;
+				}
+
+				// runtime error
+				int exitCode = process.exitValue();
+				if (exitCode != 0) {
+					log.info(
+						"[runserver][service][submit] isCorrect Runtime ERROR outputfile = \"{}\", errorFile = \"{}\"",
+						runService.fileToString(outputFile), runService.fileToString(errorFile));
+					return SubmitResult.ERROR;
+				}
+
+				// 정답 파일과 출력 파일 비교 - 그냥 틀림
+				if (!compareToAnswer(outputFile, answer)) {
+					log.info(
+						"[runserver][service][submit] isCorrect WRONG outputfile = \"{}\", answerfile=\"{}\", errorFile = \"{}\"",
+						runService.fileToString(outputFile), runService.fileToString(answer),
+						runService.fileToString(errorFile));
+					return SubmitResult.WRONG;
+				}
+
 			}
-
-			// runtime error
-			int exitCode = process.exitValue();
-			if (exitCode != 0) {
-				log.info("runtime error: exitCode = {}", exitCode);
-				return SubmitResult.ERROR;
-			}
-
-			// 정답 파일과 출력 파일 비교 - 그냥 틀림
-			if (!compareToAnswer(outputFile, answer)) {
-				return SubmitResult.WRONG;
-			}
-
+			return SubmitResult.CORRECT;
+		} catch (IOException e) {
+			log.error("[runserver][service][submit] isCorrect IOException error = {}", e.getMessage());
+			throw new RuntimeException(e);
+		} catch (InterruptedException e) {
+			log.error("[runserver][service][submit] isCorrect InterruptedException error = {}", e.getMessage());
+			throw new RuntimeException(e);
+		} catch (Exception e) {
+			log.error("[runserver][service][submit] isCorrect Exception error = {}", e.getMessage());
+			throw new RuntimeException(e);
 		}
-
-		return SubmitResult.CORRECT;
 	}
 
 	/*
@@ -185,12 +202,21 @@ public class SubmitService {
 	 * @throws IOException
 	 *
 	 */
-	public boolean compareToAnswer(File outputFile, File answer) throws IOException {
+	public boolean compareToAnswer(File outputFile, File answer) {
 
-		byte[] outputFileBytes = Files.readAllBytes(outputFile.toPath());
-		byte[] answerBytes = Files.readAllBytes(answer.toPath());
+		try {
+			byte[] outputFileBytes = Files.readAllBytes(outputFile.toPath());
+			byte[] answerBytes = Files.readAllBytes(answer.toPath());
+			// TODO 왜 빈 로그 하나, 채워진 로그 하나 출력되지?
+			log.info("[runserver][service][submit] compareToAnswer outputFileBytes = \"{}\", answerBytes= \"{}\"",
+				Base64.getEncoder().encodeToString(outputFileBytes),
+				Base64.getEncoder().encodeToString(answerBytes));
+			return Arrays.equals(outputFileBytes, answerBytes);
+		} catch (IOException e) {
+			log.error("[runserver][service][submit] compareToAnswer IOException error = {}", e.getMessage());
+			throw new RuntimeException(e);
+		}
 
-		return Arrays.equals(outputFileBytes, answerBytes);
 	}
 
 }
