@@ -117,7 +117,7 @@ public class AdminController {
 			return ApiResponse.okWithData(algoAllResponseDtoList);
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			throw new RuntimeException("admin에서 algorithm 문제 수정 시 오류");
+			throw new RuntimeException("admin에서 algorithm 목록 받아올 때 오류");
 		}
 	}
 
