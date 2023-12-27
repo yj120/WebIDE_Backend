@@ -26,4 +26,10 @@ public class SubmitRequestDto {
 		return new SubmitRequestDto(s3Key, algorithmId, fileExtension);
 	}
 
+	@Override
+	public String toString() {
+		return "SubmitRequestDto [s3Key=" + s3Key + ", algorithmId=" + algorithmId + ", fileExtension=" + fileExtension
+				+ "]";
+	}
+
 }
