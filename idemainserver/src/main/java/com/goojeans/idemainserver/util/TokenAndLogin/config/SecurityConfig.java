@@ -70,7 +70,7 @@ public class SecurityConfig {
                         .requestMatchers("/login/success").permitAll()
                         .requestMatchers("/main").permitAll()
                         .requestMatchers("/ws/chat/test/").permitAll() // using chat
-                        .requestMatchers("/ws/chat/").permitAll() // using chat
+                        .requestMatchers("/ws/chat/**").permitAll() // using chat
                         .requestMatchers("/chat/**").permitAll() // using chat
                         .requestMatchers("/PUBLIC").permitAll() // test 용
                         .anyRequest().authenticated())// 이외 다른 모든 경로로는 인증이 되어야 접근할 수 있다!
