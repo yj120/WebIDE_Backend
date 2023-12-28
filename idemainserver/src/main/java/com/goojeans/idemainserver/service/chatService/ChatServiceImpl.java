@@ -48,7 +48,7 @@ public class ChatServiceImpl implements ChatService {
                 .chatId(chat.getChatId())
                 .nickname(chat.getNickname())
                 .content(chat.getContent())
-                .createAt(Timestamp.valueOf(chat.getCreatedAt()))
+                .createdAt(Timestamp.valueOf(chat.getCreatedAt()))
                 .build();
 
     }
