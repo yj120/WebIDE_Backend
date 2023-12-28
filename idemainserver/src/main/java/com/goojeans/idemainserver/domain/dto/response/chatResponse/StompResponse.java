@@ -18,5 +18,5 @@ public class StompResponse {
 
     private String content;
 
-    private Timestamp createAt;
+    private Timestamp createdAt;
 }
