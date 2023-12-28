@@ -266,10 +266,13 @@ public class S3Repository {
 
 			String serializedCode = objectBytes.asUtf8String();
 
+			log.info("[runserver][repository] downloadFileFromS3 file to byte, String serializedCode = {}", serializedCode);
 			// 이스케이프 문자 처리
-			String sourceCode = serializedCode.replace("\\\\", "\\")
+			String sourceCode = serializedCode
+				.replace("\\\\", "\\")
 				.replace("\\\"", "\"")
 				.replace("\\n", "\n");
+log.info("[runserver][repository] downloadFileFromS3 이스케이프 문자 처리 후 sourceCode = {}", sourceCode);
 
 			try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
 				writer.write(sourceCode);
