@@ -39,10 +39,10 @@ public class ChatController {
     }
 
     @GetMapping("/chat/search/{algorithmId}")
-    public ChatApiResponse<?> getChatsByKeyword(@PathVariable("algorithmId") Long algorithmId, @RequestParam("keyword") String keyword) {
+    public ChatApiResponse<?> getChatsByKeyword(@PathVariable("algorithmId") Long algorithmId, @RequestParam("keyword") String keyword, @RequestParam("nickname") String nickname) {
 
         try {
-            List<ChatResponse> chats = chatService.searchChats(algorithmId, keyword);
+            List<ChatResponse> chats = chatService.searchChats(algorithmId, keyword, nickname);
             return new ChatApiResponse<>(chats);
         } catch (NoSuchElementException e) {
             return new ChatApiResponse<>(4040, e.getMessage());
