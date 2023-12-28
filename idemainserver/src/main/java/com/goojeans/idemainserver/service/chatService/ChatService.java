@@ -11,5 +11,5 @@ public interface ChatService {
 
     List<ChatResponse> getChats(Long algorithmId);
 
-    List<ChatResponse> searchChats(Long algorithmId, String keyword);
+    List<ChatResponse> searchChats(Long algorithmId, String keyword, String nickname);
 }
