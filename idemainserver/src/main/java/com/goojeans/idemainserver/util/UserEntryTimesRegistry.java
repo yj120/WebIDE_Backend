@@ -1,10 +1,12 @@
 package com.goojeans.idemainserver.util;
 
-import java.sql.Timestamp;
+import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Component
 public class UserEntryTimesRegistry {
 
     private final Map<String, LocalDateTime> userEntryTimes = new ConcurrentHashMap<>();
