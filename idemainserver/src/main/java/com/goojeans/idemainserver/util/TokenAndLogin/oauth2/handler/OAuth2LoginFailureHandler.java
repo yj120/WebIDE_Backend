@@ -1,7 +1,7 @@
 package com.goojeans.idemainserver.util.TokenAndLogin.oauth2.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.goojeans.idemainserver.util.TokenAndLogin.ErrorCode;
+import com.goojeans.idemainserver.util.TokenAndLogin.ResponseCode;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,7 +30,7 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
         response.setContentType("application/json;charset=UTF-8"); // 응답 타입을 JSON으로 설정
 
         Map<String, Object> data = new HashMap<>();
-        data.put("statusCode", ErrorCode.LOGIN_FAIL_SOCIAL.getStatus());
+        data.put("statusCode", ResponseCode.LOGIN_FAIL_SOCIAL.getStatus());
         data.put("data", Collections.singletonList(Collections.singletonMap("message", "소셜 로그인 실패! 서버 로그를 확인해주세요.")));
 
         response.getWriter().write(objectMapper.writeValueAsString(data)); // JSON 문자열로 변환하여 응답에 쓰기

@@ -3,7 +3,7 @@ package com.goojeans.idemainserver.util.TokenAndLogin;
 import jakarta.servlet.http.HttpServletResponse;
 
 
-public enum ErrorCode {
+public enum ResponseCode {
 
     OK(HttpServletResponse.SC_OK,200,"REQUEST SUCCESS"),
 
@@ -40,7 +40,7 @@ public enum ErrorCode {
     private final String message;
 
 
-    ErrorCode(int code, int status, String message) {
+    ResponseCode(int code, int status, String message) {
         this.code = code;
         this.status = status;
         this.message = message;
