@@ -5,6 +5,7 @@ import com.goojeans.idemainserver.domain.entity.MemberSolved;
 import com.goojeans.idemainserver.util.TokenAndLogin.Role;
 import com.goojeans.idemainserver.util.TokenAndLogin.SocialType;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -24,6 +25,8 @@ public class User extends BaseEntity {
     @Column(name = "user_id")
     private Long id;
 
+    @NotNull
+    @Column(nullable = false)
     private String email; // 이메일
     private String password; // 비밀번호
     private String nickname; // 닉네임
@@ -57,23 +60,15 @@ public class User extends BaseEntity {
 
     //== 유저 필드 업데이트 ==//
 
-    // 닉네임 변경 불가
-//    public void updateNickname(String updateNickname) {
-//        this.nickname = updateNickname;
-//    }
-
-
     // 블로그주소 업데이트
     public void updateBlog(String blog) {
         this.bio = blog;
     }
 
-
     // 주소 업데이트
     public void updateCity(String updateCity) {
         this.city = updateCity;
     }
-
 
     // 비밀번호 업데이트
     public void updatePassword(String updatePassword, PasswordEncoder passwordEncoder) {

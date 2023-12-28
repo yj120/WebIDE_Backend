@@ -8,7 +8,7 @@ import com.goojeans.idemainserver.repository.Users.UserRepository;
 import com.goojeans.idemainserver.repository.algorithm.S3RepositoryImpl;
 import com.goojeans.idemainserver.util.TokenAndLogin.ApiException;
 import com.goojeans.idemainserver.util.TokenAndLogin.ApiResponse;
-import com.goojeans.idemainserver.util.TokenAndLogin.ErrorCode;
+import com.goojeans.idemainserver.util.TokenAndLogin.ResponseCode;
 import com.goojeans.idemainserver.util.TokenAndLogin.Role;
 import com.goojeans.idemainserver.util.TokenAndLogin.jwt.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,11 +36,11 @@ public class UserService {
 
         if (userRepository.findByEmail(userSignUpDto.getEmail()).isPresent()) {
             //throw new Exception("이미 존재하는 이메일입니다.");
-            throw new ApiException(ErrorCode.ALEADY_EXIST_EMAIL,ErrorCode.ALEADY_EXIST_EMAIL.getMessage());
+            throw new ApiException(ResponseCode.ALEADY_EXIST_EMAIL, ResponseCode.ALEADY_EXIST_EMAIL.getMessage());
         }
 
         if (userRepository.findByNickname(userSignUpDto.getNickname()).isPresent()) {
-            throw new ApiException(ErrorCode.ALEADY_EXIST_NICKNAME,ErrorCode.ALEADY_EXIST_NICKNAME.getMessage());
+            throw new ApiException(ResponseCode.ALEADY_EXIST_NICKNAME, ResponseCode.ALEADY_EXIST_NICKNAME.getMessage());
             //throw new Exception("이미 존재하는 닉네임입니다.");
         }
 
@@ -83,7 +83,7 @@ public class UserService {
             }
         }else{
             // 토큰으로 유저를 찾을 수 없음 (==유효하지 않은 토큰)
-            throw new ApiException(ErrorCode.INVALID_TOKEN,ErrorCode.INVALID_TOKEN.getMessage());
+            throw new ApiException(ResponseCode.INVALID_TOKEN, ResponseCode.INVALID_TOKEN.getMessage());
         }
 
         return null;
@@ -104,9 +104,9 @@ public class UserService {
                     .email(user.getEmail())
                     .nickname(user.getNickname())
                     .build();
-            return apiResponse.ok(ErrorCode.OK.getStatus(), oAuthUserInfoDto);
+            return apiResponse.ok(ResponseCode.OK.getStatus(), oAuthUserInfoDto);
         }else{ // 토큰이 유효 하지 않다.
-            return apiResponse.fail(ErrorCode.INVALID_TOKEN.getStatus(),ErrorCode.INVALID_TOKEN.getMessage());
+            return apiResponse.fail(ResponseCode.INVALID_TOKEN.getStatus(), ResponseCode.INVALID_TOKEN.getMessage());
 
         }
     }
@@ -134,14 +134,14 @@ public class UserService {
                     userBioAndAdressDto.setAddress(city);
                     // 성공 시 성공코드, 변경 정보(블로그,주소) 리턴
                     ApiResponse apiResponse = new ApiResponse();
-                    return apiResponse.ok(ErrorCode.OK.getStatus(), userBioAndAdressDto);
+                    return apiResponse.ok(ResponseCode.OK.getStatus(), userBioAndAdressDto);
                 }
             }
         }
         // 토큰 추출이 이루어지지 않았거나 or 토큰을 추출했지만 유효한 값이 아닌 경우 -> error
         // 실패 시 에러코드, 메세지
         ApiResponse apiResponse = new ApiResponse();
-        return apiResponse.fail(ErrorCode.EDIT_FAIL.getStatus(),ErrorCode.EDIT_FAIL.getMessage());
+        return apiResponse.fail(ResponseCode.EDIT_FAIL.getStatus(), ResponseCode.EDIT_FAIL.getMessage());
     }
 
 
@@ -161,7 +161,7 @@ public class UserService {
                 user.updateIsAdmin(Role.USER);
             }
         }else{
-            throw new ApiException(ErrorCode.INVALID_TOKEN,ErrorCode.INVALID_TOKEN.getMessage());
+            throw new ApiException(ResponseCode.INVALID_TOKEN, ResponseCode.INVALID_TOKEN.getMessage());
         }
     }
 
@@ -177,12 +177,12 @@ public class UserService {
                 Optional<User> OptionalUser = userRepository.findByEmail(extractEmail.get());
                 User user = OptionalUser.get();
                 user.updatePassword(password.getPassword(),passwordEncoder);
-                return apiResponse.ok(ErrorCode.OK.getStatus(), ErrorCode.OK.getMessage());
+                return apiResponse.ok(ResponseCode.OK.getStatus(), ResponseCode.OK.getMessage());
             }else if(!jwtService.isTokenValid(AccessToken)){
-                return apiResponse.fail(ErrorCode.INVALID_TOKEN.getStatus(),ErrorCode.INVALID_TOKEN.getMessage());
+                return apiResponse.fail(ResponseCode.INVALID_TOKEN.getStatus(), ResponseCode.INVALID_TOKEN.getMessage());
             }
         }
-        return apiResponse.fail(ErrorCode.EDIT_FAIL.getStatus(),ErrorCode.EDIT_FAIL.getMessage());
+        return apiResponse.fail(ResponseCode.EDIT_FAIL.getStatus(), ResponseCode.EDIT_FAIL.getMessage());
 
     }
 
@@ -210,9 +210,9 @@ public class UserService {
             }
 
         }else{
-            apiResponse.fail(ErrorCode.INTERNAL_SERVER_ERROR.getStatus(), ErrorCode.OK.getMessage());
+            apiResponse.fail(ResponseCode.INTERNAL_SERVER_ERROR.getStatus(), ResponseCode.OK.getMessage());
         }
-        return apiResponse.ok(ErrorCode.OK.getStatus(),ErrorCode.OK.getMessage());
+        return apiResponse.ok(ResponseCode.OK.getStatus(), ResponseCode.OK.getMessage());
     }
 
 

@@ -5,17 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goojeans.idemainserver.domain.dto.request.TokenAndLogin.PasswordDto;
 import com.goojeans.idemainserver.domain.dto.request.TokenAndLogin.UserSignUpDto;
 import com.goojeans.idemainserver.domain.dto.response.TokenAndLogin.*;
-import com.goojeans.idemainserver.domain.entity.Users.User;
-import com.goojeans.idemainserver.repository.Users.UserRepository;
-import com.goojeans.idemainserver.repository.algorithm.S3Repository;
-import com.goojeans.idemainserver.repository.algorithm.S3RepositoryImpl;
 import com.goojeans.idemainserver.service.UserService;
 import com.goojeans.idemainserver.util.TokenAndLogin.ApiException;
 import com.goojeans.idemainserver.util.TokenAndLogin.ApiResponse;
-import com.goojeans.idemainserver.util.TokenAndLogin.ErrorCode;
+import com.goojeans.idemainserver.util.TokenAndLogin.ResponseCode;
 import com.goojeans.idemainserver.util.TokenAndLogin.jwt.service.JwtService;
-import com.goojeans.idemainserver.util.TokenAndLogin.login.service.LoginService;
-import com.goojeans.idemainserver.util.TokenAndLogin.oauth2.service.CustomOAuth2UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -35,14 +29,7 @@ import java.util.*;
 public class UserController {
 
     private final UserService userService;
-    private final CustomOAuth2UserService customOAuth2UserService;
-    private final UserRepository userRepository;
     private final JwtService jwtService;
-    private final LoginService loginService;
-
-    private ObjectMapper objectMapper = new ObjectMapper(); // JSON 변환을 위한 ObjectMapper
-
-
 
 
     //루트 경로로 매핑
@@ -65,7 +52,7 @@ public class UserController {
     @GetMapping("/login/success")
     public ResponseDto<ResponseDataDto> login(@RequestParam("token") String token, HttpServletRequest request){
         ApiResponse apiResponse = new ApiResponse();
-        return apiResponse.ok(ErrorCode.OK.getStatus(), token);
+        return apiResponse.ok(ResponseCode.OK.getStatus(), token);
     }
 
     // 회원 가입 - 일반 회원 가입
@@ -74,7 +61,7 @@ public class UserController {
         ApiResponse apiResponse = new ApiResponse();
         // @NotNull 조건 검사
         if (bindingResult.hasErrors()) {
-            return apiResponse.fail(ErrorCode.MISSING_REQUIRED_INFORMATION.getStatus(), ErrorCode.MISSING_REQUIRED_INFORMATION.getMessage());
+            return apiResponse.fail(ResponseCode.MISSING_REQUIRED_INFORMATION.getStatus(), ResponseCode.MISSING_REQUIRED_INFORMATION.getMessage());
         }
         // 회원가입 서비스
         try{
@@ -84,7 +71,7 @@ public class UserController {
             return apiResponse.fail(e.getErrorCode().getStatus(), e.getMessage());
         }
         // 회원 가입 성공
-        return apiResponse.ok(ErrorCode.OK.getStatus(), ErrorCode.OK.getMessage());
+        return apiResponse.ok(ResponseCode.OK.getStatus(), ResponseCode.OK.getMessage());
     }
 
 
@@ -98,9 +85,9 @@ public class UserController {
         try{
             userService.setUserBlogAndAddress(request,blog,city);
         }catch (ApiException e){
-            return apiResponse.fail(ErrorCode.INVALID_TOKEN.getStatus(), ErrorCode.INVALID_TOKEN.getMessage());
+            return apiResponse.fail(ResponseCode.INVALID_TOKEN.getStatus(), ResponseCode.INVALID_TOKEN.getMessage());
         }
-        return apiResponse.ok(ErrorCode.OK.getStatus(), ErrorCode.OK.getMessage());
+        return apiResponse.ok(ResponseCode.OK.getStatus(), ResponseCode.OK.getMessage());
     }
 
 
@@ -131,7 +118,7 @@ public class UserController {
         ResponseDto responseDto = new ResponseDto();
         try{
             UserInfoDto userInfo = userService.getUserInfo(request);
-            return apiResponse.ok(ErrorCode.OK.getStatus(), userInfo);
+            return apiResponse.ok(ResponseCode.OK.getStatus(), userInfo);
         }catch (ApiException e){
             return apiResponse.fail(e.getErrorCode().getStatus(),e.getMessage());
         }
@@ -154,7 +141,7 @@ public class UserController {
                                               HttpServletRequest request){
         if(password.getPassword()==null){
             ApiResponse apiResponse = new ApiResponse();
-            return apiResponse.fail(ErrorCode.MISSING_REQUIRED_INFORMATION.getCode(), ErrorCode.MISSING_REQUIRED_INFORMATION.getMessage());
+            return apiResponse.fail(ResponseCode.MISSING_REQUIRED_INFORMATION.getCode(), ResponseCode.MISSING_REQUIRED_INFORMATION.getMessage());
         }
         ApiResponse apiResponse = new ApiResponse();
         return userService.updateUserPassword(request,password);
@@ -173,7 +160,7 @@ public class UserController {
             try(PrintWriter out = response.getWriter()) {
                 // 커스텀 에러 메시지
                 ApiResponse apiResponse = new ApiResponse();
-                ResponseDto<ResponseDataDto> errormessage = apiResponse.fail(ErrorCode.ACCESS_DENIED.getStatus(), "잘못된 접근");
+                ResponseDto<ResponseDataDto> errormessage = apiResponse.fail(ResponseCode.ACCESS_DENIED.getStatus(), "잘못된 접근");
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 String jsonString = objectMapper.writeValueAsString(errormessage);

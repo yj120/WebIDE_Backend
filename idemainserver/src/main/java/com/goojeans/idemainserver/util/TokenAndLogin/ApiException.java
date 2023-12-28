@@ -1,15 +1,15 @@
 package com.goojeans.idemainserver.util.TokenAndLogin;
 
 public class ApiException extends RuntimeException{
-    private ErrorCode errorCode = ErrorCode.UNCATEGORIZED;
+    private ResponseCode responseCode = ResponseCode.UNCATEGORIZED;
 
 
-    public ApiException(ErrorCode errorCode, String message){
+    public ApiException(ResponseCode responseCode, String message){
         super(message);
-        this.errorCode = errorCode;
+        this.responseCode = responseCode;
     }
 
-    public ErrorCode getErrorCode(){
-        return errorCode;
+    public ResponseCode getErrorCode(){
+        return responseCode;
     }
 }

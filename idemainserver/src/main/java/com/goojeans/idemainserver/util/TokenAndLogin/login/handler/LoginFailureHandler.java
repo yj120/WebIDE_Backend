@@ -1,6 +1,6 @@
 package com.goojeans.idemainserver.util.TokenAndLogin.login.handler;
 
-import com.goojeans.idemainserver.util.TokenAndLogin.ErrorCode;
+import com.goojeans.idemainserver.util.TokenAndLogin.ResponseCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +8,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,8 +31,8 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
         response.setContentType("application/json;charset=UTF-8"); // 응답 타입을 JSON으로 설정
 
         Map<String, Object> data = new HashMap<>();
-        data.put("statusCode", ErrorCode.LOGIN_FAIL.getStatus());
-        data.put("error",ErrorCode.LOGIN_FAIL.getMessage());
+        data.put("statusCode", ResponseCode.LOGIN_FAIL.getStatus());
+        data.put("error", ResponseCode.LOGIN_FAIL.getMessage());
 
 
         //
