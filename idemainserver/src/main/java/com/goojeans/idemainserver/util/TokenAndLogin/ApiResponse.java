@@ -38,7 +38,7 @@ public class ApiResponse {
         List<UserInfoDto> data = new ArrayList<>();
         data.add(userdata);
         responseDto.setData(data);
-        responseDto.setStatus(ErrorCode.OK.getStatus());
+        responseDto.setStatus(ResponseCode.OK.getStatus());
         return responseDto;
     }
 
@@ -48,7 +48,7 @@ public class ApiResponse {
         List<UserBioAndAdressDto> data = new ArrayList<>();
         data.add(userdata);
         responseDto.setData(data);
-        responseDto.setStatus(ErrorCode.OK.getStatus());
+        responseDto.setStatus(ResponseCode.OK.getStatus());
         return responseDto;
     }
 
@@ -58,7 +58,7 @@ public class ApiResponse {
         List<OAuthUserInfoDto> data = new ArrayList<>();
         data.add(userdata);
         responseDto.setData(data);
-        responseDto.setStatus(ErrorCode.OK.getStatus());
+        responseDto.setStatus(ResponseCode.OK.getStatus());
         return responseDto;
     }
 
