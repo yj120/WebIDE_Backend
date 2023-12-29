@@ -68,15 +68,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 /**
                  * 😡❌원래 리다이렉트 전에 헤더에 토큰 값을 넣어서 리다이렉트하려했지만, 리다이렉트페이지에서 헤더에 값 조회가 안됨
                  */
-                //response.sendRedirect("/oauth/sign-up"); // 프론트의 회원가입 추가 정보 입력 폼으로 리다이렉트 "oauth2/sign-up"
-                //String authorization = response.getHeader("Authorization");
-                //log.info("Oauth2에서 헤더 확인:{}",authorization);
-
-
-//                jwtService.sendAccessAndRefreshToken(response, accessToken, null);
-//                User findUser = userRepository.findByEmail(oAuth2User.getEmail())
-//                                .orElseThrow(() -> new IllegalArgumentException("이메일에 해당하는 유저가 없습니다."));
-//                findUser.authorizeUser();
 
             } else {
                 loginSuccess(response, oAuth2User); // 로그인에 성공한 경우 access, refresh 토큰 생성
