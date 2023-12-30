@@ -20,7 +20,7 @@ spring:
             client-id: ${KAKAO_ID}
             client-secret: ${KAKAO_SECRET}
             redirect-uri: https://eb.goojeans-server.com/login/oauth2/code/kakao
-            client-authentication-method:  client_secret_post #POST
+            client-authentication-method: client_secret_post #POST
             authorization-grant-type: authorization_code
             scope: profile_nickname, profile_image, account_email
             client-name: Kakao
