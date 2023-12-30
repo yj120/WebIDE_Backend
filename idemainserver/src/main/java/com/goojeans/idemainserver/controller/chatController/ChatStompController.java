@@ -5,6 +5,7 @@ import com.goojeans.idemainserver.domain.dto.response.chatResponse.ChatApiRespon
 import com.goojeans.idemainserver.domain.dto.response.chatResponse.StompNoticeResponse;
 import com.goojeans.idemainserver.domain.dto.response.chatResponse.StompResponse;
 import com.goojeans.idemainserver.service.chatService.ChatService;
+import com.goojeans.idemainserver.util.UserEntryTimesRegistry;
 import com.goojeans.idemainserver.util.UserSessionRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
 
 @Slf4j
@@ -28,6 +30,7 @@ public class ChatStompController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final UserSessionRegistry userSessionRegistry;
     private final ChatService chatService;
+    private final UserEntryTimesRegistry userEntryTimesRegistry;
 
     //사용자 입장 알림
     @MessageMapping("/chat/enter/{algorithmId}")
@@ -35,6 +38,9 @@ public class ChatStompController {
 
         String sessionId = accessor.getSessionId();
         String nickname = userSessionRegistry.getNickname(sessionId);
+
+        LocalDateTime entryTime = LocalDateTime.now();
+        userEntryTimesRegistry.put(nickname, entryTime);
 
         String message = nickname + " 님이 입장하셨습니다.";
 
@@ -78,8 +84,13 @@ public class ChatStompController {
                 .build();
 
         try {
+            //퇴장한 사용자 userSessionRegistry 에서 정보 지우기
             String sessionId = userSessionRegistry.getSessionId(nickname);
             userSessionRegistry.removeUser(sessionId);
+
+            //퇴장한 사용자 userEntryTimesRegistry 에서 정보 지우기
+            userEntryTimesRegistry.remove(nickname);
+
             simpMessagingTemplate.convertAndSend("/topic/chat/" + algorithmId, noticeResponse);
             log.info("remove nickname={}", nickname);
 
@@ -87,7 +98,7 @@ public class ChatStompController {
 
         } catch (Exception e) {
 
-            log.info("userSessionRegistry 에서 해당 사용자를 찾을 수 없습니다.");
+            log.info("해당 사용자를 찾을 수 없습니다.");
             return new ChatApiResponse<>(4006, "해당 사용자가 존재하지 않습니다.");
         }
 

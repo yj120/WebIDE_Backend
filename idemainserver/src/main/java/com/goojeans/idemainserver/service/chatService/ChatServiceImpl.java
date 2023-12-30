@@ -6,12 +6,15 @@ import com.goojeans.idemainserver.domain.entity.Algorithm;
 import com.goojeans.idemainserver.domain.entity.chatEntity.Chat;
 import com.goojeans.idemainserver.repository.algorithm.AlgorithmRepository;
 import com.goojeans.idemainserver.repository.chatRepository.ChatRepository;
+import com.goojeans.idemainserver.util.UserEntryTimesRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -25,6 +28,7 @@ public class ChatServiceImpl implements ChatService {
 
     private final ChatRepository chatRepository;
     private final AlgorithmRepository algorithmRepository;
+    private final UserEntryTimesRegistry userEntryTimesRegistry;
 
     /**
      * Chat 저장
@@ -48,7 +52,7 @@ public class ChatServiceImpl implements ChatService {
                 .chatId(chat.getChatId())
                 .nickname(chat.getNickname())
                 .content(chat.getContent())
-                .createAt(Timestamp.valueOf(chat.getCreatedAt()))
+                .createdAt(Timestamp.valueOf(chat.getCreatedAt()))
                 .build();
 
     }
@@ -74,11 +78,16 @@ public class ChatServiceImpl implements ChatService {
      * @return List<ChatResponse>
      */
     @Override
-    public List<ChatResponse> searchChats(Long algorithmId, String keyword) {
+    public List<ChatResponse> searchChats(Long algorithmId, String keyword, String nickname) {
 
         findAlgorithm(algorithmId);
+        LocalDateTime entryTime = userEntryTimesRegistry.getEntryTime(nickname);
+        if (entryTime == null) {
+            log.info("해당 사용자의 입장 시간 정보가 없습니다.");
+            return Collections.emptyList();
+        }
 
-        List<Chat> chats = chatRepository.findByKeyword(algorithmId, keyword);
+        List<Chat> chats = chatRepository.findByKeyword(algorithmId, keyword, entryTime);
 
         return chats.stream()
                 .map(this::toDto)
