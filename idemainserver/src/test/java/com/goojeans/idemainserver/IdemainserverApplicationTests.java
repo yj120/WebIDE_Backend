@@ -2,6 +2,7 @@ package com.goojeans.idemainserver;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 /*
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
@@ -10,6 +11,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 */
 
 //@Testcontainers
+@ActiveProfiles("test")
 @SpringBootTest
 class IdemainserverApplicationTests {
 
